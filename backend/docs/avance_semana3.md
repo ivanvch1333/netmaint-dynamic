@@ -9,23 +9,37 @@ Este repositorio contiene el desarrollo del Avance 1 de la plataforma, enfocado 
 
 📁 3. Arquitectura del Repositorio (VS Code)El proyecto se estructura bajo un modelo de arquitectura limpia, desacoplando la lógica de negocio pura de cualquier infraestructura web o base de datos en esta fase inicial:netmaint-dynamic/
 
+
 ├── .gitignore               # Exclusiones de Git (evita subir venv, __pycache__, etc.)
+
 ├── README.md                # Portada técnica y guía de instalación (Este archivo)
+
 └── backend/
+
     ├── docs/                # Documentación técnica de las Fases 1 y 2 (SRS)
+
     ├── uploads/             # Almacenamiento local de logs, imágenes y logos
+
     │   └── marca/           # Carpeta para logotipos corporativos dinámicos
+
     ├── src/                 # CÓDIGO FUENTE DE PYTHON
+
     │   ├── __init__.py      # Inicializador de paquete
+
     │   └── core_motor.py    # Motor lógico de procesamiento, validación y alertas (SOLID)
+
     └── tests/               # CONJUNTO DE PRUEBAS AUTOMATIZADAS
+
         ├── __init__.py
+
         └── test_core.py     # Pruebas unitarias de consistencia y límites
+
 
 ⚡ 4. Funcionamiento del Motor Lógico (core_motor.py)El módulo core_motor.py se ha desarrollado bajo los principios SOLID (Responsabilidad Única e Inversión de Dependencias). Es un módulo puro sin dependencias de frameworks web ni conexiones a bases de datos, ideal para verificar la lógica de cálculo y la robustez de las validaciones de entrada.
 
 🛡️ Validaciones de Consistencia Implementadas:Para garantizar que la base de datos no reciba información corrupta del terreno, el motor valida que:El voltaje comercial de entrada se ubique en un rango físico real: $0\text{V} \le \text{Voltaje} \le 300\text{V}$.
-La autonomía de respaldo de las baterías UPS no sea un valor de tiempo negativo ($\ge 0 \text{ minutos}$).La temperatura registrada por el sensor no represente anomalías imposibles de la física terrestre: $-40^\circ\text{C} \le \text{Temperatura} \le 80^\circ\text{C}$.Cualquier violación a estas reglas detiene síncronamente el proceso y lanza una excepción controlada del tipo ValueError.🧮 Lógica de Negocio y Alertas de Negocio:PUE (Eficiencia Energética): Se calcula mediante la relación matemática:$$PUE = \frac{\text{Energía Eléctrica Total del Nodo}}{\text{Energía Consumida por Equipos de Red}}$$Donde un valor óptimo ideal es $1.0$. Valores superiores a $2.0$ denotan ineficiencia crítica del nodo.Alertas Térmicas: Clasifica si hay Sobrecalentamiento (Temperatura $> 25^\circ\text{C}$) o Subenfriamiento (Temperatura $< 15^\circ\text{C}$, desperdicio de energía del aire acondicionado).Alertas Eléctricas: Identifica de forma autónoma si el nodo se ha quedado sin energía de red comercial ($\text{Voltaje} = 0\text{V}$) y está operando en estado de emergencia, o si las baterías tienen un tiempo de vida inferior a los $15\text{ minutos}$ críticos.
+La autonomía de respaldo de las baterías UPS no sea un valor de tiempo negativo ($\ge 0 \text{ minutos}$).La temperatura registrada por el sensor no represente anomalías imposibles de la física terrestre: $-40^\circ\text{C} \le \text{Temperatura} \le 80^\circ\text{C}$.Cualquier violación a estas reglas detiene síncronamente el proceso y lanza una excepción controlada del tipo ValueError.
+🧮 Lógica de Negocio y Alertas de Negocio:PUE (Eficiencia Energética): Se calcula mediante la relación matemática:$$PUE = \frac{\text{Energía Eléctrica Total del Nodo}}{\text{Energía Consumida por Equipos de Red}}$$Donde un valor óptimo ideal es $1.0$. Valores superiores a $2.0$ denotan ineficiencia crítica del nodo.Alertas Térmicas: Clasifica si hay Sobrecalentamiento (Temperatura $> 25^\circ\text{C}$) o Subenfriamiento (Temperatura $< 15^\circ\text{C}$, desperdicio de energía del aire acondicionado).Alertas Eléctricas: Identifica de forma autónoma si el nodo se ha quedado sin energía de red comercial ($\text{Voltaje} = 0\text{V}$) y está operando en estado de emergencia, o si las baterías tienen un tiempo de vida inferior a los $15\text{ minutos}$ críticos.
 
 🚀 5. Guía de Instalación y EjecuciónSigue estos pasos detallados en tu terminal para desplegar el entorno de desarrollo local:
 Paso 1: Clonar el Repositorio de GitHubgit clone https://github.com/ivanvch1333/netmaint-dynamic.git
