@@ -1,0 +1,32 @@
+🌐 NetMaint-Dynamic PROPlataforma Unificada de Gestión de Infraestructura ISP, Automatización de Órdenes de Trabajo y Motor de Checklists Dinámicos.Este repositorio contiene el desarrollo del Avance 1 de la plataforma, enfocado en el diseño de requerimientos, la definición de la arquitectura cliente-servidor síncrona en tiempo real y la construcción del motor lógico central (Core) de validación y evaluación energética de nodos.📋 1. Descripción del ProyectoNetMaint-Dynamic PRO es una solución de software cliente-servidor diseñada para automatizar, registrar y auditar el ciclo de vida de los mantenimientos preventivos mensuales de los nodos físicos de distribución de un ISP.Bajo un enfoque $100\%$ síncrono en tiempo real, el técnico en terreno utiliza una interfaz de navegador web responsive desde su dispositivo móvil para conectarse al backend de Python. El sistema descarga dinámicamente las preguntas configuradas por el administrador, permitiendo reportar el checklist, registrar anomalías mediante texto libre, cargar fotografías de evidencia física y firmar digitalmente el acta de mantenimiento, la cual se compila en un documento PDF oficial inmutable en el servidor.🎯 2. Objetivos del Proyecto2.1. Objetivo GeneralDesarrollar una plataforma Web App síncrona en tiempo real basada en Python para la gestión y automatización de mantenimientos mensuales de nodos ISP, integrando un motor de parametrización dinámica y generación de informes de auditoría en formato PDF.2.2. Objetivos EspecíficosDiseño y Persistencia: Diseñar un modelo de datos relacional dinámico en PostgreSQL que independice las preguntas de inspección de la lógica de código fuente del sistema.Automatización del Backend: Implementar servicios automatizados en segundo plano en el backend para la generación masiva de órdenes de trabajo periódicas.Desarrollo de Interfaz Unificada: Desarrollar una interfaz web única e integrada (responsive/Mobile-First) que permita el control administrativo desde terminales de escritorio y el llenado de informes en terreno vía navegador web móvil.📁 3. Arquitectura del Repositorio (VS Code)El proyecto se estructura bajo un modelo de arquitectura limpia, desacoplando la lógica de negocio pura de cualquier infraestructura web o base de datos en esta fase inicial:netmaint-dynamic/
+├── .gitignore               # Exclusiones de Git (evita subir venv, __pycache__, etc.)
+├── README.md                # Portada técnica y guía de instalación (Este archivo)
+└── backend/
+    ├── docs/                # Documentación técnica de las Fases 1 y 2 (SRS)
+    ├── uploads/             # Almacenamiento local de logs, imágenes y logos
+    │   └── marca/           # Carpeta para logotipos corporativos dinámicos
+    ├── src/                 # CÓDIGO FUENTE DE PYTHON
+    │   ├── __init__.py      # Inicializador de paquete
+    │   └── core_motor.py    # Motor lógico de procesamiento, validación y alertas (SOLID)
+    └── tests/               # CONJUNTO DE PRUEBAS AUTOMATIZADAS
+        ├── __init__.py
+        └── test_core.py     # Pruebas unitarias de consistencia y límites
+⚡ 4. Funcionamiento del Motor Lógico (core_motor.py)El módulo core_motor.py se ha desarrollado bajo los principios SOLID (Responsabilidad Única e Inversión de Dependencias). Es un módulo puro sin dependencias de frameworks web ni conexiones a bases de datos, ideal para verificar la lógica de cálculo y la robustez de las validaciones de entrada.🛡️ Validaciones de Consistencia Implementadas:Para garantizar que la base de datos no reciba información corrupta del terreno, el motor valida que:El voltaje comercial de entrada se ubique en un rango físico real: $0\text{V} \le \text{Voltaje} \le 300\text{V}$.La autonomía de respaldo de las baterías UPS no sea un valor de tiempo negativo ($\ge 0 \text{ minutos}$).La temperatura registrada por el sensor no represente anomalías imposibles de la física terrestre: $-40^\circ\text{C} \le \text{Temperatura} \le 80^\circ\text{C}$.Cualquier violación a estas reglas detiene síncronamente el proceso y lanza una excepción controlada del tipo ValueError.🧮 Lógica de Negocio y Alertas de Negocio:PUE (Eficiencia Energética): Se calcula mediante la relación matemática:$$PUE = \frac{\text{Energía Eléctrica Total del Nodo}}{\text{Energía Consumida por Equipos de Red}}$$Donde un valor óptimo ideal es $1.0$. Valores superiores a $2.0$ denotan ineficiencia crítica del nodo.Alertas Térmicas: Clasifica si hay Sobrecalentamiento (Temperatura $> 25^\circ\text{C}$) o Subenfriamiento (Temperatura $< 15^\circ\text{C}$, desperdicio de energía del aire acondicionado).Alertas Eléctricas: Identifica de forma autónoma si el nodo se ha quedado sin energía de red comercial ($\text{Voltaje} = 0\text{V}$) y está operando en estado de emergencia, o si las baterías tienen un tiempo de vida inferior a los $15\text{ minutos}$ críticos.🚀 5. Guía de Instalación y EjecuciónSigue estos pasos detallados en tu terminal para desplegar el entorno de desarrollo local:Paso 1: Clonar el Repositorio de GitHubgit clone [https://github.com/tu-usuario/netmaint-dynamic.git](https://github.com/tu-usuario/netmaint-dynamic.git)
+cd netmaint-dynamic
+Paso 2: Crear el Entorno Virtual de Python (Aislamiento)Accede a la carpeta de backend y configura el intérprete local:cd backend
+python -m venv venv
+Paso 3: Activar el Entorno VirtualEn Windows (PowerShell):.\venv\Scripts\Activate.ps1
+En Windows (CMD):venv\Scripts\activate
+En macOS / Linux:source venv/bin/activate
+Notarás que tu terminal ahora muestra el prefijo (venv), confirmando que estás operando de forma aislada.Paso 4: Instalar las Dependencias de Desarrollopip install --upgrade pip
+pip install pytest pillow
+🧪 6. Ejecución de Pruebas Unitarias (pytest)Para validar que el motor lógico rechaza los datos negativos, procesa adecuadamente las alertas y calcula correctamente la eficiencia energética sin necesidad de una base de datos activa, corre las pruebas unitarias automáticas ejecutando:pytest tests/
+Ejemplo de Salida Esperada de la Consola:============================= test session starts =============================
+platform win32 -- Python 3.10.x, pytest-7.x.x
+rootdir: C:/projects/netmaint-dynamic/backend
+collected 11 items
+
+tests/test_core.py ...........                                           [100%]
+
+============================== 11 passed in 0.15s =============================
+NetMaint-Dynamic PRO - Desarrollado por el Grupo de Ingeniería de Software.
