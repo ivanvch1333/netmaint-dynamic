@@ -77,17 +77,8 @@ def seed_initial_data(db: Session):
         logger.info("  (inicia sesion primero como admin_red)")
         logger.info("=" * 60)
 
-    # Técnico por defecto
-    if not db.query(models.Usuario).filter(models.Usuario.username == "tecnico").first():
-        db.add(models.Usuario(
-            nombre="Técnico Operativo",
-            username="tecnico",
-            correo="tecnico@netmaint.com",
-            password_hash=hash_password("Tecnico123*"),
-            rol="Tecnico",
-            totp_activo=False,
-            totp_verificado=False
-        ))
+    # Nota: Los técnicos se crean manualmente desde el panel de administración.
+    # No se crea ningún técnico por defecto para evitar que reaparezca tras ser eliminado.
 
     db.commit()
 

@@ -100,7 +100,7 @@ class OrdenTrabajo(Base):
 
     nodo = relationship("Nodo", back_populates="ordenes_trabajo")
     tecnico = relationship("Usuario", back_populates="ordenes_asignadas")
-    reporte = relationship("ReporteMantenimiento", uselist=False, back_populates="orden_trabajo")
+    reporte = relationship("ReporteMantenimiento", uselist=False, back_populates="orden_trabajo", cascade="all, delete-orphan")
 
 
 class ReporteMantenimiento(Base):
