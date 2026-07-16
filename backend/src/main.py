@@ -973,6 +973,7 @@ def descargar_reporte_pdf(ot_id: int, db: Session = Depends(get_db)):
             [Paragraph("Estado:", s_bold), Paragraph(ot.estado, s_body), Paragraph("Fecha Cierre:", s_bold), Paragraph(str(ot.fecha_cierre or "N/A"), s_body)],
             [Paragraph("Técnico:", s_bold), Paragraph(ot.tecnico.nombre if ot.tecnico else "N/A", s_body), Paragraph("Correo:", s_bold), Paragraph(ot.tecnico.correo if ot.tecnico else "N/A", s_body)],
             [Paragraph("Nodo:", s_bold), Paragraph(ot.nodo.nombre, s_body), Paragraph("Tipo / Criticidad:", s_bold), Paragraph("{} / {}".format(ot.nodo.tipo, ot.nodo.criticidad), s_body)],
+            [Paragraph("Latitud:", s_bold), Paragraph(str(ot.nodo.latitud), s_body), Paragraph("Longitud:", s_bold), Paragraph(str(ot.nodo.longitud), s_body)],
         ]
         info_tbl = Table(info, colWidths=[120, 146, 120, 146])
         info_tbl.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#F7FAFC")), ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#E2E8F0")), ('TOPPADDING', (0,0), (-1,-1), 5), ('BOTTOMPADDING', (0,0), (-1,-1), 5)]))
@@ -1027,31 +1028,28 @@ def descargar_reporte_pdf(ot_id: int, db: Session = Depends(get_db)):
 
         # OBSERVACIONES GENERALES
         obs_txt = ot.reporte.observaciones_generales or "Sin observaciones registradas."
-        obs_elements = [Paragraph("OBSERVACIONES GENERALES", s_heading)]
+        story.append(Paragraph("OBSERVACIONES GENERALES", s_heading))
         obs_tbl = Table([[Paragraph(obs_txt, s_body)]], colWidths=[532])
-        obs_tbl.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#F7FAFC")), ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor("#E2E8F0")), ('TOPPADDING', (0,0), (-1,-1), 8), ('BOTTOMPADDING', (0,0), (-1,-1), 8), ('LEFTPADDING', (0,0), (-1,-1), 10)]))
-        obs_elements.append(obs_tbl)
-        story.append(KeepTogether(obs_elements))
-        story.append(Spacer(1, 10))
+        obs_tbl.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#F7FAFC")), ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor("#E2E8F0")), ('TOPPADDING', (0,0), (-1,-1), 6), ('BOTTOMPADDING', (0,0), (-1,-1), 6), ('LEFTPADDING', (0,0), (-1,-1), 10)]))
+        story.append(obs_tbl)
+        story.append(Spacer(1, 8))
 
         # NOVEDADES Y ANOMALÍAS
         nov_txt = ot.reporte.novedades_detectadas or "Sin novedades registradas."
-        nov_elements = [Paragraph("NOVEDADES Y ANOMALÍAS DETECTADAS", s_heading)]
+        story.append(Paragraph("NOVEDADES Y ANOMALÍAS DETECTADAS", s_heading))
         is_danger = ot.reporte.novedades_detectadas and ot.reporte.novedades_detectadas.strip()
         nov_tbl = Table([[Paragraph(nov_txt, s_body)]], colWidths=[532])
-        nov_tbl.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#FFF5F5") if is_danger else colors.HexColor("#F7FAFC")), ('BOX', (0,0), (-1,-1), 1, colors.HexColor("#FEB2B2") if is_danger else colors.HexColor("#E2E8F0")), ('TOPPADDING', (0,0), (-1,-1), 8), ('BOTTOMPADDING', (0,0), (-1,-1), 8), ('LEFTPADDING', (0,0), (-1,-1), 10)]))
-        nov_elements.append(nov_tbl)
-        story.append(KeepTogether(nov_elements))
-        story.append(Spacer(1, 10))
+        nov_tbl.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#FFF5F5") if is_danger else colors.HexColor("#F7FAFC")), ('BOX', (0,0), (-1,-1), 1, colors.HexColor("#FEB2B2") if is_danger else colors.HexColor("#E2E8F0")), ('TOPPADDING', (0,0), (-1,-1), 6), ('BOTTOMPADDING', (0,0), (-1,-1), 6), ('LEFTPADDING', (0,0), (-1,-1), 10)]))
+        story.append(nov_tbl)
+        story.append(Spacer(1, 8))
 
         # RECOMENDACIONES
         rec_txt = ot.reporte.recomendaciones or "Sin recomendaciones adicionales."
-        rec_elements = [Paragraph("RECOMENDACIONES", s_heading)]
+        story.append(Paragraph("RECOMENDACIONES", s_heading))
         rec_tbl = Table([[Paragraph(rec_txt, s_body)]], colWidths=[532])
-        rec_tbl.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#FFFBEB")), ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor("#F6E05E")), ('TOPPADDING', (0,0), (-1,-1), 8), ('BOTTOMPADDING', (0,0), (-1,-1), 8), ('LEFTPADDING', (0,0), (-1,-1), 10)]))
-        rec_elements.append(rec_tbl)
-        story.append(KeepTogether(rec_elements))
-        story.append(Spacer(1, 15))
+        rec_tbl.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#FFFBEB")), ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor("#F6E05E")), ('TOPPADDING', (0,0), (-1,-1), 6), ('BOTTOMPADDING', (0,0), (-1,-1), 6), ('LEFTPADDING', (0,0), (-1,-1), 10)]))
+        story.append(rec_tbl)
+        story.append(Spacer(1, 10))
 
         # FOTOS GRID
         urls_fotos = ot.reporte.fotos_urls
@@ -1078,7 +1076,7 @@ def descargar_reporte_pdf(ot_id: int, db: Session = Depends(get_db)):
                 if os.path.exists(foto_path):
                     try:
                         # Imagen flowable
-                        img = RLImage(foto_path, width=230, height=160)
+                        img = RLImage(foto_path, width=220, height=130)
                         
                         # Sub-tabla para enmarcar foto y su descripción
                         cell_data = [[img]]
@@ -1087,14 +1085,14 @@ def descargar_reporte_pdf(ot_id: int, db: Session = Depends(get_db)):
                             cell_data.append([Paragraph(descripcion, s_body)])
                         
                         # El marco (tarjeta) con borde y fondo
-                        marco_tbl = Table(cell_data, colWidths=[240])
+                        marco_tbl = Table(cell_data, colWidths=[230])
                         marco_tbl.setStyle(TableStyle([
                             ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor("#CBD5E0")),
                             ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#F7FAFC")),
                             ('ALIGN', (0,0), (-1,-1), 'CENTER'),
                             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-                            ('TOPPADDING', (0,0), (-1,-1), 8),
-                            ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+                            ('TOPPADDING', (0,0), (-1,-1), 6),
+                            ('BOTTOMPADDING', (0,0), (-1,-1), 6),
                             ('LEFTPADDING', (0,0), (-1,-1), 5),
                             ('RIGHTPADDING', (0,0), (-1,-1), 5),
                         ]))
@@ -1103,7 +1101,8 @@ def descargar_reporte_pdf(ot_id: int, db: Session = Depends(get_db)):
                         logger.error("Error foto PDF: {}".format(str(e)))
 
         if img_flowables:
-            fotos_els = [Paragraph("REGISTRO FOTOGRÁFICO EN SITIO", s_heading)]
+            story.append(Paragraph("REGISTRO FOTOGRÁFICO EN SITIO", s_heading))
+            story.append(Spacer(1, 5))
             grid = []
             for i in range(0, len(img_flowables), 2):
                 row = img_flowables[i:i+2]
@@ -1114,10 +1113,10 @@ def descargar_reporte_pdf(ot_id: int, db: Session = Depends(get_db)):
             ft.setStyle(TableStyle([
                 ('ALIGN', (0,0), (-1,-1), 'CENTER'),
                 ('VALIGN', (0,0), (-1,-1), 'TOP'),
-                ('BOTTOMPADDING', (0,0), (-1,-1), 15)
+                ('BOTTOMPADDING', (0,0), (-1,-1), 10)
             ]))
-            fotos_els.append(ft)
-            story.append(KeepTogether(fotos_els))
+            story.append(ft)
+            story.append(Spacer(1, 10))
 
         # FIRMA DIGITAL DEL TÉCNICO
         firma_path = None

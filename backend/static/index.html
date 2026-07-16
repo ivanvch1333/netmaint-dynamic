@@ -1050,12 +1050,17 @@
                     <div id="checklist-render-container"></div>
 
                     <div class="form-group" style="margin-bottom: 20px;">
-                        <label>Observaciones y Novedades</label>
+                        <label>Observaciones Generales</label>
+                        <textarea id="maint-observaciones" class="form-control" rows="3" style="margin-top: 6px;" placeholder="Observaciones generales del estado del nodo, condiciones encontradas..."></textarea>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="color: var(--danger);">Novedades y Anomalías Detectadas</label>
                         <textarea id="maint-novedades" class="form-control" rows="3" style="margin-top: 6px; border-color: rgba(239, 68, 68, 0.3);" placeholder="Fallas de estructura, daños físicos, alertas..."></textarea>
                     </div>
 
                     <div class="form-group" style="margin-bottom: 20px;">
-                        <label>Recomendaciones</label>
+                        <label style="color: var(--warning);">Recomendaciones</label>
                         <textarea id="maint-recomendaciones" class="form-control" rows="3" style="margin-top: 6px; border-color: rgba(251, 191, 36, 0.4);" placeholder="Recomendaciones de mejora, reemplazo de piezas, próximas revisiones..."></textarea>
                     </div>
 
@@ -1904,12 +1909,14 @@
                 respuestas.push({ parametro_id: pId, valor: valor, comentario: comentario });
             });
 
+            const observaciones_generales = document.getElementById("maint-observaciones").value.trim();
             const novedades_detectadas = document.getElementById("maint-novedades").value.trim();
             const recomendaciones = document.getElementById("maint-recomendaciones").value.trim();
 
             // 2. Construir FormData multipart
             const formData = new FormData();
             formData.append("respuestas_json", JSON.stringify(respuestas));
+            if (observaciones_generales) formData.append("observaciones_generales", observaciones_generales);
             if (novedades_detectadas) formData.append("novedades_detectadas", novedades_detectadas);
             if (recomendaciones) formData.append("recomendaciones", recomendaciones);
 
