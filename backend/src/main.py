@@ -1034,24 +1034,7 @@ def descargar_reporte_pdf(ot_id: int, db: Session = Depends(get_db)):
         story.append(obs_tbl)
         story.append(Spacer(1, 8))
 
-        # NOVEDADES Y ANOMALÍAS
-        nov_txt = ot.reporte.novedades_detectadas or "Sin novedades registradas."
-        story.append(Paragraph("NOVEDADES Y ANOMALÍAS DETECTADAS", s_heading))
-        is_danger = ot.reporte.novedades_detectadas and ot.reporte.novedades_detectadas.strip()
-        nov_tbl = Table([[Paragraph(nov_txt, s_body)]], colWidths=[532])
-        nov_tbl.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#FFF5F5") if is_danger else colors.HexColor("#F7FAFC")), ('BOX', (0,0), (-1,-1), 1, colors.HexColor("#FEB2B2") if is_danger else colors.HexColor("#E2E8F0")), ('TOPPADDING', (0,0), (-1,-1), 6), ('BOTTOMPADDING', (0,0), (-1,-1), 6), ('LEFTPADDING', (0,0), (-1,-1), 10)]))
-        story.append(nov_tbl)
-        story.append(Spacer(1, 8))
-
-        # RECOMENDACIONES
-        rec_txt = ot.reporte.recomendaciones or "Sin recomendaciones adicionales."
-        story.append(Paragraph("RECOMENDACIONES", s_heading))
-        rec_tbl = Table([[Paragraph(rec_txt, s_body)]], colWidths=[532])
-        rec_tbl.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#FFFBEB")), ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor("#F6E05E")), ('TOPPADDING', (0,0), (-1,-1), 6), ('BOTTOMPADDING', (0,0), (-1,-1), 6), ('LEFTPADDING', (0,0), (-1,-1), 10)]))
-        story.append(rec_tbl)
-        story.append(Spacer(1, 10))
-
-        # FOTOS GRID
+        # FOTOS GRID (Impreso después de las observaciones y antes de las novedades)
         urls_fotos = ot.reporte.fotos_urls
         if isinstance(urls_fotos, str):
             try: urls_fotos = json.loads(urls_fotos)
@@ -1117,6 +1100,23 @@ def descargar_reporte_pdf(ot_id: int, db: Session = Depends(get_db)):
             ]))
             story.append(ft)
             story.append(Spacer(1, 10))
+
+        # NOVEDADES Y ANOMALÍAS
+        nov_txt = ot.reporte.novedades_detectadas or "Sin novedades registradas."
+        story.append(Paragraph("NOVEDADES Y ANOMALÍAS DETECTADAS", s_heading))
+        is_danger = ot.reporte.novedades_detectadas and ot.reporte.novedades_detectadas.strip()
+        nov_tbl = Table([[Paragraph(nov_txt, s_body)]], colWidths=[532])
+        nov_tbl.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#FFF5F5") if is_danger else colors.HexColor("#F7FAFC")), ('BOX', (0,0), (-1,-1), 1, colors.HexColor("#FEB2B2") if is_danger else colors.HexColor("#E2E8F0")), ('TOPPADDING', (0,0), (-1,-1), 6), ('BOTTOMPADDING', (0,0), (-1,-1), 6), ('LEFTPADDING', (0,0), (-1,-1), 10)]))
+        story.append(nov_tbl)
+        story.append(Spacer(1, 8))
+
+        # RECOMENDACIONES
+        rec_txt = ot.reporte.recomendaciones or "Sin recomendaciones adicionales."
+        story.append(Paragraph("RECOMENDACIONES", s_heading))
+        rec_tbl = Table([[Paragraph(rec_txt, s_body)]], colWidths=[532])
+        rec_tbl.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#FFFBEB")), ('BOX', (0,0), (-1,-1), 0.5, colors.HexColor("#F6E05E")), ('TOPPADDING', (0,0), (-1,-1), 6), ('BOTTOMPADDING', (0,0), (-1,-1), 6), ('LEFTPADDING', (0,0), (-1,-1), 10)]))
+        story.append(rec_tbl)
+        story.append(Spacer(1, 10))
 
         # FIRMA DIGITAL DEL TÉCNICO
         firma_path = None
