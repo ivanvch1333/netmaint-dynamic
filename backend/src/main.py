@@ -13,7 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, HTMLResponse, Response
 from sqlalchemy.orm import Session
-from PIL import Image
+from PIL import Image, ImageOps
 from contextlib import asynccontextmanager
 
 from reportlab.lib.pagesizes import letter
@@ -821,12 +821,20 @@ def procesar_y_guardar_imagen(file: UploadFile, ot_id: int, index: int) -> str:
     ext = os.path.splitext(file.filename)[1] or ".jpg"
     filename = "ot_{}_foto_{}_{}{}".format(ot_id, index, int(datetime.utcnow().timestamp()), ext)
     filepath = os.path.join(UPLOAD_DIR, filename)
-    if file_size_kb > 500:
+
+    try:
+        img = Image.open(io.BytesIO(file_bytes))
+        # Corregir orientación automática según metadatos EXIF del smartphone
         try:
-            img = Image.open(io.BytesIO(file_bytes))
-            if img.mode in ("RGBA", "P"):
-                img = img.convert("RGB")
-            buf = io.BytesIO()
+            img = ImageOps.exif_transpose(img)
+        except Exception:
+            pass
+
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+
+        buf = io.BytesIO()
+        if file_size_kb > 500:
             img.save(buf, format="JPEG", quality=75, optimize=True)
             compressed = buf.getvalue()
             if len(compressed) / 1024 > 500:
@@ -837,12 +845,13 @@ def procesar_y_guardar_imagen(file: UploadFile, ot_id: int, index: int) -> str:
                 compressed = buf2.getvalue()
             with open(filepath, "wb") as f:
                 f.write(compressed)
-        except Exception:
-            with open(filepath, "wb") as f:
-                f.write(file_bytes)
-    else:
+        else:
+            img.save(filepath, format="JPEG", quality=90, optimize=True)
+    except Exception as e:
+        logger.error("Error al procesar orientación de imagen: {}".format(str(e)))
         with open(filepath, "wb") as f:
             f.write(file_bytes)
+
     return "/uploads/{}".format(filename)
 
 
