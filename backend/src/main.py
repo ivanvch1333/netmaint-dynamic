@@ -551,6 +551,32 @@ def subir_footer(
     return config
 
 
+@app.post("/configuracion/watermark", response_model=schemas.ConfiguracionEmpresaResponse, tags=["Configuración Empresa"])
+def subir_watermark(
+    watermark: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(obtener_usuario_actual)
+):
+    if current_user.rol not in ["Administrador", "SuperAdministrador"]:
+        raise HTTPException(status_code=403, detail="Acceso denegado.")
+    if watermark.content_type not in ["image/jpeg", "image/png", "image/jpg"]:
+        raise HTTPException(status_code=400, detail="Formato no permitido. Debe ser JPG o PNG.")
+    ext = os.path.splitext(watermark.filename)[1] or ".png"
+    filename = "watermark_empresa{}".format(ext)
+    filepath = os.path.join(UPLOAD_DIR, filename)
+    file_bytes = watermark.file.read()
+    with open(filepath, "wb") as f:
+        f.write(file_bytes)
+    config = db.query(models.ConfiguracionEmpresa).first()
+    if not config:
+        config = models.ConfiguracionEmpresa(nombre_empresa="Empresa", nit_ruc="000")
+        db.add(config)
+    config.url_watermark_local = "/uploads/{}".format(filename)
+    db.commit()
+    db.refresh(config)
+    return config
+
+
 # ==============================================================
 # CHECKLIST DINÁMICO
 # ==============================================================
@@ -996,17 +1022,24 @@ def descargar_reporte_pdf(ot_id: int, db: Session = Depends(get_db)):
             if os.path.exists(fp):
                 footer_path = fp
 
+        wm_url = (empresa.url_watermark_local or empresa.url_logo_local) if empresa else None
+        wm_path = None
+        if wm_url:
+            wp = os.path.join(os.getcwd(), wm_url.lstrip("/"))
+            if os.path.exists(wp):
+                wm_path = wp
+
         # Marca de agua y pie de página (callback para cada página)
         def marca_agua(canvas_obj, doc_obj):
             page_w, page_h = letter
-            if logo_path:
+            if wm_path:
                 try:
                     canvas_obj.saveState()
-                    canvas_obj.setFillAlpha(0.06)
-                    wm_w, wm_h = 280, 280
+                    canvas_obj.setFillAlpha(0.08)
+                    wm_w, wm_h = 380, 380
                     x = (page_w - wm_w) / 2
                     y = (page_h - wm_h) / 2
-                    canvas_obj.drawImage(logo_path, x, y, width=wm_w, height=wm_h, mask='auto', preserveAspectRatio=True)
+                    canvas_obj.drawImage(wm_path, x, y, width=wm_w, height=wm_h, mask='auto', preserveAspectRatio=True)
                     canvas_obj.restoreState()
                 except Exception:
                     pass

@@ -73,9 +73,15 @@
         .view {
             display: none;
             width: 100%;
-            max-width: 1280px;
+            max-width: 1720px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 20px 32px;
+        }
+
+        #view-admin {
+            max-width: 100%;
+            padding: 24px 32px;
+            margin: 0;
         }
 
         .view.active {
@@ -901,15 +907,28 @@
                         </div>
 
                         <!-- Footer Image Upload -->
-                        <div class="glass-card card-form" style="background: rgba(255,255,255,0.01); display: flex; flex-direction: column; gap: 16px; grid-column: span 2;">
-                            <h4 style="font-family: var(--font-display);">Banner Pie de Página PDF (Dirección, Teléfonos y Contactos)</h4>
+                        <div class="glass-card card-form" style="background: rgba(255,255,255,0.01); display: flex; flex-direction: column; gap: 16px;">
+                            <h4 style="font-family: var(--font-display);">Banner Pie de Página PDF (Dirección y Contactos)</h4>
                             <div class="photo-upload-zone">
                                 <p>Arrastra o haz clic aquí para subir la imagen de Pie de Página</p>
-                                <p style="font-size: 0.75rem; color: var(--text-muted);">Soporta JPG, PNG. Se imprimirá en el margen inferior de todas las páginas del PDF.</p>
+                                <p style="font-size: 0.75rem; color: var(--text-muted);">Soporta JPG, PNG. Se imprimirá en el borde inferior de todas las páginas.</p>
                                 <input type="file" id="brand-footer-file" accept="image/*" onchange="uploadFooter(event)">
                             </div>
                             <div style="text-align: center;">
                                 <img id="preview-brand-footer" src="" alt="Vista previa del pie de página" style="max-height: 60px; max-width: 100%; border-radius: 6px; display: none; object-fit: contain; margin: 0 auto; border: 1px solid var(--border-color); padding: 5px;">
+                            </div>
+                        </div>
+
+                        <!-- Watermark Image Upload -->
+                        <div class="glass-card card-form" style="background: rgba(255,255,255,0.01); display: flex; flex-direction: column; gap: 16px; grid-column: span 2;">
+                            <h4 style="font-family: var(--font-display);">Marca de Agua PDF (Fondo de Hoja)</h4>
+                            <div class="photo-upload-zone">
+                                <p>Arrastra o haz clic aquí para subir la Marca de Agua de Fondo</p>
+                                <p style="font-size: 0.75rem; color: var(--text-muted);">Soporta JPG, PNG. Se imprimirá con un tono tenue y opacidad suave (8%) centrada al fondo del PDF.</p>
+                                <input type="file" id="brand-wm-file" accept="image/*" onchange="uploadWatermark(event)">
+                            </div>
+                            <div style="text-align: center;">
+                                <img id="preview-brand-wm" src="" alt="Vista previa de marca de agua" style="max-height: 90px; max-width: 100%; border-radius: 6px; display: none; object-fit: contain; margin: 0 auto; border: 1px solid var(--border-color); padding: 5px; background: rgba(255,255,255,0.03);">
                             </div>
                         </div>
                     </div>
@@ -1315,6 +1334,14 @@
                             pFooter.style.display = "block";
                         }
                     }
+
+                    if (data.url_watermark_local) {
+                        const pWm = document.getElementById("preview-brand-wm");
+                        if (pWm) {
+                            pWm.src = `${data.url_watermark_local}?t=${new Date().getTime()}`;
+                            pWm.style.display = "block";
+                        }
+                    }
                     
                     // Rellenar formulario si está cargado
                     const fName = document.getElementById("brand-name");
@@ -1394,6 +1421,31 @@
                     throw new Error(err.detail || "Error al subir la imagen de pie de página.");
                 }
                 alert("Banner de pie de página actualizado con éxito.");
+                loadBranding();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function uploadWatermark(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append("watermark", file);
+
+            try {
+                const response = await fetch(`${API_URL}/configuracion/watermark`, {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${TOKEN}` },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail || "Error al subir la marca de agua.");
+                }
+                alert("Marca de agua del PDF actualizada con éxito.");
                 loadBranding();
             } catch (err) {
                 alert(err.message);

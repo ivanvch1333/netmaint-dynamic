@@ -60,6 +60,7 @@ class ConfiguracionEmpresaResponse(BaseModel):
     nit_ruc: str
     url_logo_local: Optional[str] = None
     url_footer_local: Optional[str] = None
+    url_watermark_local: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
