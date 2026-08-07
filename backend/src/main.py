@@ -1014,7 +1014,7 @@ def descargar_reporte_pdf(ot_id: int, db: Session = Depends(get_db)):
             if footer_path:
                 try:
                     canvas_obj.saveState()
-                    canvas_obj.drawImage(footer_path, 40, 15, width=532, height=35, mask='auto', preserveAspectRatio=True)
+                    canvas_obj.drawImage(footer_path, 40, 15, width=532, height=38, mask='auto', preserveAspectRatio=False)
                     canvas_obj.restoreState()
                 except Exception:
                     pass
