@@ -920,15 +920,15 @@
                         </div>
 
                         <!-- Watermark Image Upload -->
-                        <div class="glass-card card-form" style="background: rgba(255,255,255,0.01); display: flex; flex-direction: column; gap: 16px; grid-column: span 2;">
+                        <div class="glass-card card-form" style="background: rgba(255,255,255,0.01); display: flex; flex-direction: column; gap: 16px;">
                             <h4 style="font-family: var(--font-display);">Marca de Agua PDF (Fondo de Hoja)</h4>
                             <div class="photo-upload-zone">
                                 <p>Arrastra o haz clic aquí para subir la Marca de Agua de Fondo</p>
-                                <p style="font-size: 0.75rem; color: var(--text-muted);">Soporta JPG, PNG. Se imprimirá con un tono tenue y opacidad suave (8%) centrada al fondo del PDF.</p>
+                                <p style="font-size: 0.75rem; color: var(--text-muted);">Soporta JPG, PNG. Se imprimirá tenue (8%) centrada al fondo del PDF.</p>
                                 <input type="file" id="brand-wm-file" accept="image/*" onchange="uploadWatermark(event)">
                             </div>
                             <div style="text-align: center;">
-                                <img id="preview-brand-wm" src="" alt="Vista previa de marca de agua" style="max-height: 90px; max-width: 100%; border-radius: 6px; display: none; object-fit: contain; margin: 0 auto; border: 1px solid var(--border-color); padding: 5px; background: rgba(255,255,255,0.03);">
+                                <img id="preview-brand-wm" src="" alt="Vista previa de marca de agua" style="max-height: 70px; max-width: 100%; border-radius: 6px; display: none; object-fit: contain; margin: 0 auto; border: 1px solid var(--border-color); padding: 5px; background: rgba(255,255,255,0.03);">
                             </div>
                         </div>
                     </div>
