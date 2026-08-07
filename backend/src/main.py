@@ -749,6 +749,7 @@ def iniciar_orden(
     if ot.estado != "Pendiente":
         raise HTTPException(status_code=400, detail="La orden debe estar en estado 'Pendiente'.")
     ot.estado = "En Progreso"
+    ot.fecha_inicio = datetime.utcnow()
     db.commit()
     db.refresh(ot)
     return ot
@@ -848,6 +849,9 @@ def completar_orden(
     observaciones_generales: Optional[str] = Form(None),
     novedades_detectadas: Optional[str] = Form(None),
     recomendaciones: Optional[str] = Form(None),
+    ingeniero_autorizador: Optional[str] = Form(None),
+    tecnico_lat: Optional[float] = Form(None),
+    tecnico_lon: Optional[float] = Form(None),
     firma_base64: str = Form(...),
     descripciones_fotos: Optional[str] = Form(None),
     fotos: List[UploadFile] = File(...),
@@ -880,8 +884,8 @@ def completar_orden(
         desc = descripciones_list[i] if i < len(descripciones_list) else ""
         guardadas_urls.append({"url": url, "descripcion": desc})
 
-    if not guardadas_urls:
-        raise HTTPException(status_code=400, detail="Debes subir al menos una foto en formato JPG o PNG.")
+    if len(guardadas_urls) < 5:
+        raise HTTPException(status_code=400, detail="Control de Calidad: Debes subir al menos 5 fotos de evidencia física del nodo.")
 
     db.add(models.ReporteMantenimiento(
         orden_trabajo_id=ot_id, respuestas_json=respuestas_dict,
@@ -889,10 +893,13 @@ def completar_orden(
         novedades_detectadas=novedades_detectadas,
         recomendaciones=recomendaciones,
         fotos_urls=guardadas_urls,
-        firma_tecnico_url=firma_url
+        firma_tecnico_url=firma_url,
+        latitud_tecnico=tecnico_lat,
+        longitud_tecnico=tecnico_lon,
+        ingeniero_autorizador=ingeniero_autorizador
     ))
     ot.estado = "Completada"
-    ot.fecha_cierre = date.today()
+    ot.fecha_cierre = datetime.utcnow()
     db.add(models.LogAuditoria(
         usuario_id=str(current_user.id),
         accion="Técnico {} finalizó mantenimiento, firmó reporte y subió {} fotos en Nodo ID {}.".format(
@@ -947,6 +954,21 @@ def descargar_reporte_pdf(ot_id: int, db: Session = Depends(get_db)):
             if os.path.exists(lp):
                 logo_path = lp
 
+        # Marca de agua (callback para cada pagina)
+        def marca_agua(canvas_obj, doc_obj):
+            if logo_path:
+                try:
+                    canvas_obj.saveState()
+                    canvas_obj.setFillAlpha(0.06)
+                    page_w, page_h = letter
+                    wm_w, wm_h = 280, 280
+                    x = (page_w - wm_w) / 2
+                    y = (page_h - wm_h) / 2
+                    canvas_obj.drawImage(logo_path, x, y, width=wm_w, height=wm_h, mask='auto', preserveAspectRatio=True)
+                    canvas_obj.restoreState()
+                except Exception:
+                    pass
+
         if logo_path:
             try:
                 logo_fl = RLImage(logo_path, width=80, height=35)
@@ -967,14 +989,39 @@ def descargar_reporte_pdf(ot_id: int, db: Session = Depends(get_db)):
         story.append(Paragraph("REPORTE DE AUDITORÍA Y MANTENIMIENTO DE NODO", s_title))
         story.append(Spacer(1, 15))
 
+        # Formatear fechas con hora
+        fmt_inicio = ot.fecha_inicio.strftime("%Y-%m-%d %H:%M") if ot.fecha_inicio else "N/A"
+        fmt_cierre = ot.fecha_cierre.strftime("%Y-%m-%d %H:%M") if ot.fecha_cierre else "N/A"
+
+        # Ingeniero autorizador
+        ing_autorizador = ot.reporte.ingeniero_autorizador or "No especificado"
+
         # INFO GENERAL
         info = [
             [Paragraph("OT ID:", s_bold), Paragraph(str(ot.id), s_body), Paragraph("Fecha Creación:", s_bold), Paragraph(str(ot.fecha_creacion), s_body)],
-            [Paragraph("Estado:", s_bold), Paragraph(ot.estado, s_body), Paragraph("Fecha Cierre:", s_bold), Paragraph(str(ot.fecha_cierre or "N/A"), s_body)],
+            [Paragraph("Inicio Mant.:", s_bold), Paragraph(fmt_inicio, s_body), Paragraph("Fin Mant.:", s_bold), Paragraph(fmt_cierre, s_body)],
             [Paragraph("Técnico:", s_bold), Paragraph(ot.tecnico.nombre if ot.tecnico else "N/A", s_body), Paragraph("Correo:", s_bold), Paragraph(ot.tecnico.correo if ot.tecnico else "N/A", s_body)],
+            [Paragraph("Autoriza:", s_bold), Paragraph(ing_autorizador, s_body), Paragraph("Estado:", s_bold), Paragraph(ot.estado, s_body)],
             [Paragraph("Nodo:", s_bold), Paragraph(ot.nodo.nombre, s_body), Paragraph("Tipo / Criticidad:", s_bold), Paragraph("{} / {}".format(ot.nodo.tipo, ot.nodo.criticidad), s_body)],
-            [Paragraph("Latitud:", s_bold), Paragraph(str(ot.nodo.latitud), s_body), Paragraph("Longitud:", s_bold), Paragraph(str(ot.nodo.longitud), s_body)],
+            [Paragraph("Lat. Nodo:", s_bold), Paragraph(str(ot.nodo.latitud), s_body), Paragraph("Long. Nodo:", s_bold), Paragraph(str(ot.nodo.longitud), s_body)],
         ]
+
+        # Coordenadas de captura del técnico y cálculo de desviación
+        if ot.reporte.latitud_tecnico is not None and ot.reporte.longitud_tecnico is not None:
+            import math
+            lat1, lon1 = math.radians(ot.nodo.latitud), math.radians(ot.nodo.longitud)
+            lat2, lon2 = math.radians(ot.reporte.latitud_tecnico), math.radians(ot.reporte.longitud_tecnico)
+            dlat, dlon = lat2 - lat1, lon2 - lon1
+            a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+            c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+            distancia_m = 6371000 * c
+            if distancia_m <= 100:
+                estado_gps = "{:.0f}m - Verificado en sitio".format(distancia_m)
+            else:
+                estado_gps = "{:.0f}m - ALERTA: Fuera de rango".format(distancia_m)
+            info.append([Paragraph("Lat. Captura:", s_bold), Paragraph(str(ot.reporte.latitud_tecnico), s_body), Paragraph("Long. Captura:", s_bold), Paragraph(str(ot.reporte.longitud_tecnico), s_body)])
+            info.append([Paragraph("Desviación:", s_bold), Paragraph(estado_gps, s_danger if distancia_m > 100 else s_body), Paragraph("", s_bold), Paragraph("", s_body)])
+
         info_tbl = Table(info, colWidths=[120, 146, 120, 146])
         info_tbl.setStyle(TableStyle([('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#F7FAFC")), ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#E2E8F0")), ('TOPPADDING', (0,0), (-1,-1), 5), ('BOTTOMPADDING', (0,0), (-1,-1), 5)]))
         story.append(info_tbl)
@@ -1163,7 +1210,7 @@ def descargar_reporte_pdf(ot_id: int, db: Session = Depends(get_db)):
         signature_elements.append(sig_tbl)
         story.append(KeepTogether(signature_elements))
 
-        doc.build(story)
+        doc.build(story, onFirstPage=marca_agua, onLaterPages=marca_agua)
         buffer.seek(0)
         return StreamingResponse(buffer, media_type="application/pdf", headers={"Content-Disposition": "attachment; filename=reporte_ot_{}.pdf".format(ot_id)})
 

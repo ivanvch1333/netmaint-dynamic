@@ -1050,6 +1050,11 @@
                     <div id="checklist-render-container"></div>
 
                     <div class="form-group" style="margin-bottom: 20px;">
+                        <label>Ingeniero que Autoriza el Mantenimiento</label>
+                        <input type="text" id="maint-ingeniero" class="form-control" style="margin-top: 6px;" placeholder="Nombre completo del ingeniero autorizador" required>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 20px;">
                         <label>Observaciones Generales</label>
                         <textarea id="maint-observaciones" class="form-control" rows="3" style="margin-top: 6px;" placeholder="Observaciones generales del estado del nodo, condiciones encontradas..."></textarea>
                     </div>
@@ -1065,10 +1070,10 @@
                     </div>
 
                     <div class="form-group" style="margin-bottom: 24px;">
-                        <label>Cargar Registro Fotográfico (Subida Múltiple)</label>
+                        <label>Cargar Registro Fotográfico (Mínimo 5, Máximo 15)</label>
                         <div class="photo-upload-zone">
                             <p>Arrastra o haz clic aquí para seleccionar fotos del Nodo</p>
-                            <p style="font-size: 0.75rem; color: var(--text-muted);">Puedes subir hasta 5 fotos. Las fotos pesadas se comprimirán automáticamente.</p>
+                            <p style="font-size: 0.75rem; color: var(--text-muted);">Mínimo 5 y máximo 15 fotos. Las fotos pesadas se comprimirán automáticamente.</p>
                             <input type="file" id="maint-photos" multiple accept="image/*" onchange="previewPhotos(event)">
                         </div>
                         <div class="preview-container" id="photos-preview-container"></div>
@@ -1850,7 +1855,7 @@
         let selectedPhotosFiles = [];
         function previewPhotos(e) {
             const files = Array.from(e.target.files);
-            selectedPhotosFiles = files.slice(0, 5); // Máximo 5 fotos
+            selectedPhotosFiles = files.slice(0, 15); // Máximo 15 fotos
             
             const container = document.getElementById("photos-preview-container");
             container.innerHTML = "";
@@ -1909,20 +1914,27 @@
                 respuestas.push({ parametro_id: pId, valor: valor, comentario: comentario });
             });
 
+            const ingeniero_autorizador = document.getElementById("maint-ingeniero").value.trim();
             const observaciones_generales = document.getElementById("maint-observaciones").value.trim();
             const novedades_detectadas = document.getElementById("maint-novedades").value.trim();
             const recomendaciones = document.getElementById("maint-recomendaciones").value.trim();
 
+            if (!ingeniero_autorizador) {
+                alert("Debes ingresar el nombre del ingeniero que autoriza el mantenimiento.");
+                return;
+            }
+
             // 2. Construir FormData multipart
             const formData = new FormData();
             formData.append("respuestas_json", JSON.stringify(respuestas));
+            formData.append("ingeniero_autorizador", ingeniero_autorizador);
             if (observaciones_generales) formData.append("observaciones_generales", observaciones_generales);
             if (novedades_detectadas) formData.append("novedades_detectadas", novedades_detectadas);
             if (recomendaciones) formData.append("recomendaciones", recomendaciones);
 
             // Adjuntar las múltiples fotos y sus descripciones
-            if (selectedPhotosFiles.length === 0) {
-                alert("Debes cargar al menos una foto del nodo.");
+            if (selectedPhotosFiles.length < 5) {
+                alert("Control de Calidad: Debes subir al menos 5 fotos de evidencia física del nodo.");
                 return;
             }
 
@@ -1934,6 +1946,17 @@
                 descripciones_fotos.push(desc);
             });
             formData.append("descripciones_fotos", JSON.stringify(descripciones_fotos));
+
+            // Capturar GPS del técnico en terreno
+            try {
+                const pos = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 });
+                });
+                formData.append("tecnico_lat", pos.coords.latitude);
+                formData.append("tecnico_lon", pos.coords.longitude);
+            } catch(gpsErr) {
+                console.warn("GPS no disponible:", gpsErr);
+            }
 
             // Validar y obtener firma
             const firma_base64 = getSignatureBase64();

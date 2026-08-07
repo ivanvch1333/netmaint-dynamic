@@ -176,7 +176,8 @@ class OrdenResponse(BaseModel):
     tecnico_id: Optional[int]
     estado: str
     fecha_creacion: date
-    fecha_cierre: Optional[date]
+    fecha_inicio: Optional[datetime] = None
+    fecha_cierre: Optional[datetime] = None
     nodo: Optional[NodoResponse] = None
     tecnico: Optional[UserResponse] = None
 
@@ -200,6 +201,9 @@ class ReporteResponse(BaseModel):
     recomendaciones: Optional[str] = None
     fotos_urls: Any
     firma_tecnico_url: Optional[str] = None
+    latitud_tecnico: Optional[float] = None
+    longitud_tecnico: Optional[float] = None
+    ingeniero_autorizador: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 

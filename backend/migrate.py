@@ -54,6 +54,33 @@ if not cur.fetchone():
 else:
     migrations.append("  [--] reportes_mantenimiento.recomendaciones already exists, skipped")
 
+# --- Nuevas columnas: fecha_inicio y fecha_cierre (TIMESTAMP) en ordenes_trabajo ---
+cur.execute("""
+    SELECT column_name FROM information_schema.columns
+    WHERE table_name = 'ordenes_trabajo' AND column_name = 'fecha_inicio';
+""")
+if not cur.fetchone():
+    cur.execute("ALTER TABLE ordenes_trabajo ADD COLUMN fecha_inicio TIMESTAMP NULL;")
+    migrations.append("  [OK] ordenes_trabajo.fecha_inicio ADDED")
+else:
+    migrations.append("  [--] ordenes_trabajo.fecha_inicio already exists, skipped")
+
+# Cambiar tipo de fecha_cierre a TIMESTAMP en ordenes_trabajo
+cur.execute("ALTER TABLE ordenes_trabajo ALTER COLUMN fecha_cierre TYPE TIMESTAMP USING fecha_cierre::timestamp;")
+migrations.append("  [OK] ordenes_trabajo.fecha_cierre ALTERED to TIMESTAMP")
+
+# --- Nuevas columnas en reportes_mantenimiento ---
+for col, col_type in [("latitud_tecnico", "DOUBLE PRECISION"), ("longitud_tecnico", "DOUBLE PRECISION"), ("ingeniero_autorizador", "VARCHAR(150)")]:
+    cur.execute("""
+        SELECT column_name FROM information_schema.columns
+        WHERE table_name = 'reportes_mantenimiento' AND column_name = %s;
+    """, (col,))
+    if not cur.fetchone():
+        cur.execute("ALTER TABLE reportes_mantenimiento ADD COLUMN {} {} NULL;".format(col, col_type))
+        migrations.append("  [OK] reportes_mantenimiento.{} ADDED".format(col))
+    else:
+        migrations.append("  [--] reportes_mantenimiento.{} already exists, skipped".format(col))
+
 cur.close()
 conn.close()
 

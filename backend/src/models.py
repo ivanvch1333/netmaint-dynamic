@@ -96,7 +96,8 @@ class OrdenTrabajo(Base):
     tecnico_id = Column(Integer, ForeignKey("usuarios.id", ondelete="SET NULL"), nullable=True)
     estado = Column(String(20), nullable=False, default="Pendiente")
     fecha_creacion = Column(Date, nullable=False, default=datetime.utcnow)
-    fecha_cierre = Column(Date, nullable=True)
+    fecha_inicio = Column(DateTime, nullable=True)
+    fecha_cierre = Column(DateTime, nullable=True)
 
     nodo = relationship("Nodo", back_populates="ordenes_trabajo")
     tecnico = relationship("Usuario", back_populates="ordenes_asignadas")
@@ -114,6 +115,9 @@ class ReporteMantenimiento(Base):
     fotos_urls = Column(JSON, nullable=False, default=list)
     firma_tecnico_url = Column(String(255), nullable=True)
     recomendaciones = Column(Text, nullable=True)
+    latitud_tecnico = Column(Float, nullable=True)
+    longitud_tecnico = Column(Float, nullable=True)
+    ingeniero_autorizador = Column(String(150), nullable=True)
 
     orden_trabajo = relationship("OrdenTrabajo", back_populates="reporte")
 
