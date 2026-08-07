@@ -889,7 +889,7 @@
                         </div>
                         <!-- Logo Upload -->
                         <div class="glass-card card-form" style="background: rgba(255,255,255,0.01); display: flex; flex-direction: column; gap: 16px;">
-                            <h4 style="font-family: var(--font-display);">Logo Corporativo</h4>
+                            <h4 style="font-family: var(--font-display);">Logo Corporativo (Encabezado)</h4>
                             <div class="photo-upload-zone">
                                 <p>Arrastra o haz clic aquí para subir el Logo</p>
                                 <p style="font-size: 0.75rem; color: var(--text-muted);">Soporta JPG, PNG.</p>
@@ -897,6 +897,19 @@
                             </div>
                             <div style="text-align: center;">
                                 <img id="preview-brand-logo" src="" alt="Vista previa del logo" style="max-height: 80px; max-width: 100%; border-radius: 6px; display: none; object-fit: contain; margin: 0 auto; border: 1px solid var(--border-color); padding: 5px;">
+                            </div>
+                        </div>
+
+                        <!-- Footer Image Upload -->
+                        <div class="glass-card card-form" style="background: rgba(255,255,255,0.01); display: flex; flex-direction: column; gap: 16px; grid-column: span 2;">
+                            <h4 style="font-family: var(--font-display);">Banner Pie de Página PDF (Dirección, Teléfonos y Contactos)</h4>
+                            <div class="photo-upload-zone">
+                                <p>Arrastra o haz clic aquí para subir la imagen de Pie de Página</p>
+                                <p style="font-size: 0.75rem; color: var(--text-muted);">Soporta JPG, PNG. Se imprimirá en el margen inferior de todas las páginas del PDF.</p>
+                                <input type="file" id="brand-footer-file" accept="image/*" onchange="uploadFooter(event)">
+                            </div>
+                            <div style="text-align: center;">
+                                <img id="preview-brand-footer" src="" alt="Vista previa del pie de página" style="max-height: 60px; max-width: 100%; border-radius: 6px; display: none; object-fit: contain; margin: 0 auto; border: 1px solid var(--border-color); padding: 5px;">
                             </div>
                         </div>
                     </div>
@@ -1286,6 +1299,14 @@
                             pImg.style.display = "block";
                         }
                     }
+
+                    if (data.url_footer_local) {
+                        const pFooter = document.getElementById("preview-brand-footer");
+                        if (pFooter) {
+                            pFooter.src = `${data.url_footer_local}?t=${new Date().getTime()}`;
+                            pFooter.style.display = "block";
+                        }
+                    }
                     
                     // Rellenar formulario si está cargado
                     const fName = document.getElementById("brand-name");
@@ -1340,6 +1361,31 @@
                     throw new Error(err.detail || "Error al subir el logo.");
                 }
                 alert("Logo corporativo actualizado con éxito.");
+                loadBranding();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function uploadFooter(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append("footer", file);
+
+            try {
+                const response = await fetch(`${API_URL}/configuracion/footer`, {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${TOKEN}` },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail || "Error al subir la imagen de pie de página.");
+                }
+                alert("Banner de pie de página actualizado con éxito.");
                 loadBranding();
             } catch (err) {
                 alert(err.message);

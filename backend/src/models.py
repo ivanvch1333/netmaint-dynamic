@@ -10,6 +10,7 @@ class ConfiguracionEmpresa(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     nombre_empresa = Column(String(150), nullable=False)
     url_logo_local = Column(String(255), nullable=True)
+    url_footer_local = Column(String(255), nullable=True)
     nit_ruc = Column(String(50), nullable=False)
 
 

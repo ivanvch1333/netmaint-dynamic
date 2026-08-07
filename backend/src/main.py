@@ -525,6 +525,32 @@ def subir_logo(
     return config
 
 
+@app.post("/configuracion/footer", response_model=schemas.ConfiguracionEmpresaResponse, tags=["Configuración Empresa"])
+def subir_footer(
+    footer: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(obtener_usuario_actual)
+):
+    if current_user.rol not in ["Administrador", "SuperAdministrador"]:
+        raise HTTPException(status_code=403, detail="Acceso denegado.")
+    if footer.content_type not in ["image/jpeg", "image/png", "image/jpg"]:
+        raise HTTPException(status_code=400, detail="Formato no permitido. Debe ser JPG o PNG.")
+    ext = os.path.splitext(footer.filename)[1] or ".png"
+    filename = "footer_empresa{}".format(ext)
+    filepath = os.path.join(UPLOAD_DIR, filename)
+    file_bytes = footer.file.read()
+    with open(filepath, "wb") as f:
+        f.write(file_bytes)
+    config = db.query(models.ConfiguracionEmpresa).first()
+    if not config:
+        config = models.ConfiguracionEmpresa(nombre_empresa="Empresa", nit_ruc="000")
+        db.add(config)
+    config.url_footer_local = "/uploads/{}".format(filename)
+    db.commit()
+    db.refresh(config)
+    return config
+
+
 # ==============================================================
 # CHECKLIST DINÁMICO
 # ==============================================================
@@ -954,17 +980,32 @@ def descargar_reporte_pdf(ot_id: int, db: Session = Depends(get_db)):
             if os.path.exists(lp):
                 logo_path = lp
 
-        # Marca de agua (callback para cada pagina)
+        footer_url = empresa.url_footer_local if empresa else None
+        footer_path = None
+        if footer_url:
+            fp = os.path.join(os.getcwd(), footer_url.lstrip("/"))
+            if os.path.exists(fp):
+                footer_path = fp
+
+        # Marca de agua y pie de página (callback para cada página)
         def marca_agua(canvas_obj, doc_obj):
+            page_w, page_h = letter
             if logo_path:
                 try:
                     canvas_obj.saveState()
                     canvas_obj.setFillAlpha(0.06)
-                    page_w, page_h = letter
                     wm_w, wm_h = 280, 280
                     x = (page_w - wm_w) / 2
                     y = (page_h - wm_h) / 2
                     canvas_obj.drawImage(logo_path, x, y, width=wm_w, height=wm_h, mask='auto', preserveAspectRatio=True)
+                    canvas_obj.restoreState()
+                except Exception:
+                    pass
+
+            if footer_path:
+                try:
+                    canvas_obj.saveState()
+                    canvas_obj.drawImage(footer_path, 40, 15, width=532, height=35, mask='auto', preserveAspectRatio=True)
                     canvas_obj.restoreState()
                 except Exception:
                     pass

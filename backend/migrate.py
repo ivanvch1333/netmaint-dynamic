@@ -81,6 +81,17 @@ for col, col_type in [("latitud_tecnico", "DOUBLE PRECISION"), ("longitud_tecnic
     else:
         migrations.append("  [--] reportes_mantenimiento.{} already exists, skipped".format(col))
 
+# --- Nueva columna en configuracion_empresa ---
+cur.execute("""
+    SELECT column_name FROM information_schema.columns
+    WHERE table_name = 'configuracion_empresa' AND column_name = 'url_footer_local';
+""")
+if not cur.fetchone():
+    cur.execute("ALTER TABLE configuracion_empresa ADD COLUMN url_footer_local VARCHAR(255) NULL;")
+    migrations.append("  [OK] configuracion_empresa.url_footer_local ADDED")
+else:
+    migrations.append("  [--] configuracion_empresa.url_footer_local already exists, skipped")
+
 cur.close()
 conn.close()
 
