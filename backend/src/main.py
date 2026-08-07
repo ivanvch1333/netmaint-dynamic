@@ -1019,17 +1019,20 @@ def descargar_reporte_pdf(ot_id: int, db: Session = Depends(get_db)):
                 except Exception:
                     pass
 
+        s_company_r = ParagraphStyle("CR", fontName="Helvetica-Bold", fontSize=13, textColor=colors.HexColor("#1A365D"), alignment=2)
+        s_nit_r = ParagraphStyle("NR", fontName="Helvetica", fontSize=9, textColor=colors.HexColor("#718096"), alignment=2)
+
         if logo_path:
             try:
-                logo_fl = RLImage(logo_path, width=80, height=35)
-                hdr_data = [[logo_fl, [Paragraph(nombre_empresa, s_company), Paragraph("NIT/RUC: {}".format(nit_ruc), s_nit)]]]
+                logo_fl = RLImage(logo_path, width=170, height=52)
+                hdr_data = [[logo_fl, [Paragraph(nombre_empresa, s_company_r), Paragraph("NIT/RUC: {}".format(nit_ruc), s_nit_r)]]]
             except Exception:
                 hdr_data = [[[Paragraph(nombre_empresa, s_company), Paragraph("NIT/RUC: {}".format(nit_ruc), s_nit)], ""]]
         else:
             hdr_data = [[[Paragraph(nombre_empresa, s_company), Paragraph("NIT/RUC: {}".format(nit_ruc), s_nit)], ""]]
 
-        hdr_tbl = Table(hdr_data, colWidths=[200, 332])
-        hdr_tbl.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE')]))
+        hdr_tbl = Table(hdr_data, colWidths=[250, 282])
+        hdr_tbl.setStyle(TableStyle([('VALIGN', (0,0), (-1,-1), 'MIDDLE'), ('ALIGN', (1,0), (1,0), 'RIGHT')]))
         story.append(hdr_tbl)
         story.append(Spacer(1, 15))
         div = Table([[""]], colWidths=[532])
