@@ -116,6 +116,7 @@ class ReporteMantenimiento(Base):
     novedades_detectadas = Column(Text, nullable=True)
     fotos_urls = Column(JSON, nullable=False, default=list)
     firma_tecnico_url = Column(String(255), nullable=True)
+    pdf_hash = Column(String(64), nullable=True)
     recomendaciones = Column(Text, nullable=True)
     latitud_tecnico = Column(Float, nullable=True)
     longitud_tecnico = Column(Float, nullable=True)

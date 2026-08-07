@@ -1,6 +1,7 @@
 import io
 import os
 import json
+import hashlib
 import logging
 import qrcode
 import base64
@@ -54,13 +55,13 @@ def seed_initial_data(db: Session):
             url_logo_local=None
         ))
 
-    # Super Administrador con 2FA preparado
-    if not db.query(models.Usuario).filter(models.Usuario.username == "admin_red").first():
+    # Super Administrador con 2FA preparado (Hardening: nombre ofuscado)
+    if not db.query(models.Usuario).filter(models.Usuario.username == "ectronix_amb_ec1").first():
         secret_2fa = generar_totp_secret()
         super_admin = models.Usuario(
-            nombre="Super Administrador Red",
-            username="admin_red",
-            correo="admin_red@netmaint.com",
+            nombre="Administrador General Ecuatronix",
+            username="ectronix_amb_ec1",
+            correo="admin@ecuatronix.com.ec",
             password_hash=hash_password("Ectronix2620@"),
             rol="SuperAdministrador",
             totp_secret=secret_2fa,
@@ -70,11 +71,11 @@ def seed_initial_data(db: Session):
         db.add(super_admin)
         logger.info("=" * 60)
         logger.info("SUPER ADMINISTRADOR CREADO")
-        logger.info("  Usuario  : admin_red")
+        logger.info("  Usuario  : ectronix_amb_ec1")
         logger.info("  Password : Ectronix2620@")
         logger.info("  2FA      : Configura escaneando el QR en:")
         logger.info("  http://localhost:8000/auth/2fa/setup")
-        logger.info("  (inicia sesion primero como admin_red)")
+        logger.info("  (inicia sesion primero como ectronix_amb_ec1)")
         logger.info("=" * 60)
 
     # Nota: Los técnicos se crean manualmente desde el panel de administración.
@@ -147,27 +148,44 @@ def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
                 minutos_restantes = max(1, segundos_restantes // 60)
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Cuenta bloqueada temporalmente por seguridad debido a 5 intentos fallidos. Intente nuevamente en {} minuto(s).".format(minutos_restantes)
+                    detail="Cuenta bloqueada temporalmente por seguridad. Intente nuevamente en {} minuto(s).".format(minutos_restantes)
                 )
 
         if not user or not verify_password(credentials.password, user.password_hash):
             # Registrar intento fallido
             if user:
                 user.intentos_fallidos += 1
-                if user.intentos_fallidos >= 5:
-                    user.bloqueado_hasta = datetime.utcnow() + timedelta(minutes=15)
+
+                # POLÍTICA DE BLOQUEO ESCALAR INCREMENTAL (Defense-in-Depth)
+                if user.intentos_fallidos >= 7:
+                    minutos_bloqueo = 60
+                elif user.intentos_fallidos >= 5:
+                    minutos_bloqueo = 10
+                elif user.intentos_fallidos >= 3:
+                    minutos_bloqueo = 3
+                else:
+                    minutos_bloqueo = 0
+
+                if minutos_bloqueo > 0:
+                    user.bloqueado_hasta = datetime.utcnow() + timedelta(minutes=minutos_bloqueo)
                     db.add(models.LogAuditoria(
                         usuario_id=credentials.username,
-                        accion="Cuenta bloqueada por seguridad (5 intentos fallidos consecutivos).",
+                        accion="Cuenta bloqueada por {} minutos ({} intentos fallidos consecutivos).".format(minutos_bloqueo, user.intentos_fallidos),
                         timestamp=datetime.utcnow()
                     ))
                 else:
                     db.add(models.LogAuditoria(
                         usuario_id=credentials.username,
-                        accion="Intento de login fallido (intento {}/5).".format(user.intentos_fallidos),
+                        accion="Intento de login fallido (intento {}).".format(user.intentos_fallidos),
                         timestamp=datetime.utcnow()
                     ))
                 db.commit()
+
+                if minutos_bloqueo > 0:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Cuenta suspendida temporalmente por {} minutos debido a {} intentos fallidos consecutivos.".format(minutos_bloqueo, user.intentos_fallidos)
+                    )
             else:
                 db.add(models.LogAuditoria(
                     usuario_id=credentials.username,
@@ -1297,14 +1315,64 @@ def descargar_reporte_pdf(ot_id: int, db: Session = Depends(get_db)):
         story.append(KeepTogether(signature_elements))
 
         doc.build(story, onFirstPage=marca_agua, onLaterPages=marca_agua)
+
+        # --- INTEGRIDAD: Calcular Hash SHA-256 del PDF generado ---
+        pdf_bytes = buffer.getvalue()
+        sha256_hash = hashlib.sha256(pdf_bytes).hexdigest()
+        if ot.reporte:
+            ot.reporte.pdf_hash = sha256_hash
+            db.commit()
+            logger.info("PDF OT-{} generado | SHA-256: {}".format(ot_id, sha256_hash))
+
         buffer.seek(0)
-        return StreamingResponse(buffer, media_type="application/pdf", headers={"Content-Disposition": "attachment; filename=reporte_ot_{}.pdf".format(ot_id)})
+        return StreamingResponse(buffer, media_type="application/pdf", headers={
+            "Content-Disposition": "attachment; filename=reporte_ot_{}.pdf".format(ot_id),
+            "X-Report-SHA256": sha256_hash
+        })
 
     except HTTPException:
         raise
     except Exception as e:
         logger.error("Error PDF: {}".format(str(e)))
         raise HTTPException(status_code=500, detail="Error al construir el PDF.")
+
+
+# ==============================================================
+# VERIFICACIÓN DE INTEGRIDAD DE PDF (SHA-256)
+# ==============================================================
+
+@app.post("/reportes/verificar", tags=["Seguridad y Auditoría"])
+def verificar_autenticidad_pdf(
+    archivo_pdf: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Endpoint de Seguridad: Recibe un archivo PDF y calcula su hash SHA-256
+    para contrastarlo contra la firma criptográfica registrada en la base de datos.
+    Garantiza No-Repudio e Integridad Documental.
+    """
+    contenido = archivo_pdf.file.read()
+    hash_calculado = hashlib.sha256(contenido).hexdigest()
+
+    reporte = db.query(models.ReporteMantenimiento).filter(
+        models.ReporteMantenimiento.pdf_hash == hash_calculado
+    ).first()
+
+    if reporte:
+        return {
+            "valido": True,
+            "estado": "INTEGRO_Y_AUTENTICO",
+            "orden_id": reporte.orden_trabajo_id,
+            "hash_sha256": hash_calculado,
+            "mensaje": "✅ VERIFICACIÓN EXITOSA: El documento es auténtico y no ha sido alterado desde su emisión por NetMaint Ecuatronix."
+        }
+    else:
+        return {
+            "valido": False,
+            "estado": "DOCUMENTO_ALTERADO_O_FALSO",
+            "hash_sha256": hash_calculado,
+            "mensaje": "⚠️ ALERTA DE SEGURIDAD: El Hash SHA-256 no coincide con ningún registro oficial. El archivo fue modificado o falsificado."
+        }
 
 
 # ==============================================================

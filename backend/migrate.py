@@ -103,6 +103,25 @@ if not cur.fetchone():
 else:
     migrations.append("  [--] configuracion_empresa.url_watermark_local already exists, skipped")
 
+# --- Nueva columna pdf_hash en reportes_mantenimiento ---
+cur.execute("""
+    SELECT column_name FROM information_schema.columns
+    WHERE table_name = 'reportes_mantenimiento' AND column_name = 'pdf_hash';
+""")
+if not cur.fetchone():
+    cur.execute("ALTER TABLE reportes_mantenimiento ADD COLUMN pdf_hash VARCHAR(64) NULL;")
+    migrations.append("  [OK] reportes_mantenimiento.pdf_hash ADDED")
+else:
+    migrations.append("  [--] reportes_mantenimiento.pdf_hash already exists, skipped")
+
+# --- Hardening: Renombrar usuario SuperAdmin ---
+cur.execute("""
+    UPDATE usuarios 
+    SET username = 'ectronix_amb_ec1' 
+    WHERE username IN ('admin_red', 'ectx_admin_audit', 'admin');
+""")
+migrations.append("  [OK] Usuario SuperAdmin renombrado a 'ectronix_amb_ec1'")
+
 cur.close()
 conn.close()
 
