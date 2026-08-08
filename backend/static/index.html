@@ -809,6 +809,7 @@
                                             <th>Tipo</th>
                                             <th>Criticidad</th>
                                             <th>Ubicación</th>
+                                            <th>Acción</th>
                                         </tr>
                                     </thead>
                                     <tbody id="table-nodos-body"></tbody>
@@ -1724,10 +1725,34 @@
                         <td>${n.tipo}</td>
                         <td><span class="badge badge-${n.criticidad.toLowerCase()}">${n.criticidad}</span></td>
                         <td>${n.latitud}, ${n.longitud}</td>
+                        <td>
+                            <button class="btn" style="padding: 4px 8px; font-size: 0.8rem; background: var(--danger);" onclick="eliminarNodo(${n.id})">🗑️ Eliminar</button>
+                        </td>
                     </tr>
                 `).join("");
             } catch (err) {
                 console.error(err);
+            }
+        }
+
+        async function eliminarNodo(nodoId) {
+            if (!confirm("⚠️ ¿Está seguro de que desea eliminar este nodo? Esta acción es irreversible.")) {
+                return;
+            }
+            try {
+                const response = await fetch(`${API_URL}/nodos/${nodoId}`, {
+                    method: "DELETE",
+                    headers: { "Authorization": `Bearer ${TOKEN}` }
+                });
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail || "Error al eliminar el nodo");
+                }
+                alert("Nodo eliminado con éxito.");
+                loadNodosAdmin();
+                loadSelects();
+            } catch (err) {
+                alert(err.message);
             }
         }
 

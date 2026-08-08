@@ -752,6 +752,38 @@ def listar_nodos(
     return db.query(models.Nodo).all()
 
 
+@app.delete("/nodos/{nodo_id}", tags=["Nodos"])
+def eliminar_nodo(
+    nodo_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(obtener_usuario_actual)
+):
+    """Permite al Administrador o SuperAdministrador eliminar un nodo si no tiene órdenes de trabajo activas."""
+    if current_user.rol not in ["Administrador", "SuperAdministrador"]:
+        raise HTTPException(status_code=403, detail="Acceso denegado. Se requieren permisos de administración.")
+        
+    nodo = db.query(models.Nodo).filter(models.Nodo.id == nodo_id).first()
+    if not nodo:
+        raise HTTPException(status_code=404, detail="El nodo solicitado no existe.")
+        
+    ordenes_asociadas = db.query(models.OrdenTrabajo).filter(models.OrdenTrabajo.nodo_id == nodo_id).first()
+    if ordenes_asociadas:
+        raise HTTPException(
+            status_code=400, 
+            detail="No se puede eliminar el nodo porque tiene órdenes de trabajo asociadas. Elimine o reasigne primero las órdenes."
+        )
+        
+    nombre_nodo = nodo.nombre
+    db.delete(nodo)
+    db.add(models.LogAuditoria(
+        usuario_id=str(current_user.id),
+        accion="Eliminación del nodo '{}' (ID: {}).".format(nombre_nodo, nodo_id),
+        timestamp=datetime.utcnow()
+    ))
+    db.commit()
+    return {"detail": "Nodo eliminado correctamente."}
+
+
 # ==============================================================
 # ÓRDENES DE TRABAJO
 # ==============================================================
