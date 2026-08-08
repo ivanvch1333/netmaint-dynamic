@@ -665,6 +665,7 @@
                 <button class="sidebar-btn" data-target="sec-usuarios" onclick="switchSection(this)">👥 Gestionar Usuarios</button>
                 <button class="sidebar-btn" data-target="sec-marca" onclick="switchSection(this)">🏢 Identidad de Marca</button>
                 <button class="sidebar-btn" data-target="sec-auditoria" onclick="switchSection(this)">📋 Logs de Auditoría</button>
+                <button class="sidebar-btn" data-target="sec-verificar-pdf" onclick="switchSection(this)">🔍 Verificar Integridad PDF</button>
                 <button class="sidebar-btn" id="btn-seguridad" data-target="sec-seguridad" onclick="switchSection(this)" style="display:none;">🛡️ Panel de Seguridad</button>
                 <div id="sidebar-2fa-section" style="display:none; border-top:1px solid var(--border-color); margin-top:8px; padding-top:8px;">
                     <button class="sidebar-btn" data-target="sec-mi2fa" onclick="switchSection(this)">🔐 Mi Doble Auth (2FA)</button>
@@ -1022,6 +1023,46 @@
                             </thead>
                             <tbody id="table-auditoria-body"></tbody>
                         </table>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN: VERIFICACIÓN DE INTEGRIDAD DE PDF (SHA-256) -->
+                <div id="sec-verificar-pdf" class="section-view">
+                    <div class="section-header">
+                        <h3>🔍 Verificación de Integridad de Reportes PDF</h3>
+                    </div>
+                    <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.9rem; line-height: 1.6;">
+                        Este módulo de <strong>Auditoría Criptográfica</strong> permite verificar si un reporte PDF descargado del sistema es auténtico e íntegro.
+                        El sistema calcula el <strong>Hash SHA-256</strong> del archivo subido y lo contrasta contra la firma digital registrada en la base de datos al momento de su generación.
+                    </p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start;">
+                        <!-- Panel de subida -->
+                        <div class="glass-card card-form" style="background: rgba(255,255,255,0.01); padding: 24px;">
+                            <h4 style="font-family: var(--font-display); margin-bottom: 16px;">📄 Subir PDF para Verificar</h4>
+                            <div class="photo-upload-zone" id="pdf-verify-dropzone" style="min-height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                <p style="font-size: 1.8rem; margin-bottom: 8px;">📎</p>
+                                <p>Arrastra o haz clic para subir el archivo PDF</p>
+                                <p style="font-size: 0.75rem; color: var(--text-muted);">Solo archivos .PDF generados por NetMaint</p>
+                                <input type="file" id="pdf-verify-file" accept=".pdf,application/pdf" onchange="verificarPDF(event)">
+                            </div>
+                            <div id="pdf-verify-filename" style="margin-top: 12px; text-align: center; color: var(--text-muted); font-size: 0.85rem;"></div>
+                        </div>
+                        <!-- Panel de resultado -->
+                        <div class="glass-card card-form" style="background: rgba(255,255,255,0.01); padding: 24px;">
+                            <h4 style="font-family: var(--font-display); margin-bottom: 16px;">📊 Resultado de Verificación</h4>
+                            <div id="pdf-verify-result" style="min-height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px dashed var(--border-color); border-radius: 12px; padding: 24px; transition: all 0.4s ease;">
+                                <p style="font-size: 2rem; margin-bottom: 8px;">🕵️</p>
+                                <p style="color: var(--text-muted); font-size: 0.9rem;">Esperando archivo PDF para analizar...</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Info técnica -->
+                    <div class="glass-card" style="margin-top: 20px; padding: 16px 20px; background: rgba(59,130,246,0.04); border: 1px solid rgba(59,130,246,0.15); border-radius: 10px;">
+                        <p style="font-size: 0.82rem; color: var(--text-accent); line-height: 1.7;">
+                            <strong>ℹ️ ¿Cómo funciona?</strong> — Cada vez que se genera un reporte PDF, el sistema calcula una huella digital criptográfica <strong>SHA-256</strong> (64 caracteres hexadecimales) 
+                            y la almacena en la base de datos. Al subir un PDF aquí, se recalcula el hash y se compara con el registro original. 
+                            Si un solo byte del documento fue modificado, el hash será completamente diferente (<em>efecto avalancha</em>), detectando cualquier alteración o falsificación.
+                        </p>
                     </div>
                 </div>
 
@@ -1450,6 +1491,66 @@
             } catch (err) {
                 alert(err.message);
             }
+        }
+
+        // --- VERIFICACIÓN DE INTEGRIDAD DE PDF (SHA-256) ---
+        async function verificarPDF(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const resultDiv = document.getElementById('pdf-verify-result');
+            const filenameDiv = document.getElementById('pdf-verify-filename');
+
+            // Mostrar estado de carga
+            filenameDiv.innerHTML = `📄 <strong>${file.name}</strong> (${(file.size / 1024).toFixed(1)} KB)`;
+            resultDiv.style.borderColor = 'var(--border-color)';
+            resultDiv.style.background = 'rgba(255,255,255,0.02)';
+            resultDiv.innerHTML = `
+                <p style="font-size: 2rem; margin-bottom: 8px;">⏳</p>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Calculando Hash SHA-256 y verificando integridad...</p>
+            `;
+
+            const formData = new FormData();
+            formData.append('archivo_pdf', file);
+
+            try {
+                const response = await fetch(`${API_URL}/reportes/verificar`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.valido) {
+                    resultDiv.style.borderColor = 'var(--success)';
+                    resultDiv.style.background = 'rgba(16, 185, 129, 0.06)';
+                    resultDiv.innerHTML = `
+                        <p style="font-size: 2.5rem; margin-bottom: 10px;">✅</p>
+                        <p style="color: var(--success); font-size: 1.1rem; font-weight: 600; margin-bottom: 8px;">DOCUMENTO ÍNTEGRO Y AUTÉNTICO</p>
+                        <p style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 4px;">Orden de Trabajo: <strong style="color: var(--text-main);">OT-${data.orden_id}</strong></p>
+                        <p style="color: var(--text-muted); font-size: 0.75rem; word-break: break-all; margin-top: 8px; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 6px; font-family: monospace;">SHA-256: ${data.hash_sha256}</p>
+                    `;
+                } else {
+                    resultDiv.style.borderColor = 'var(--danger)';
+                    resultDiv.style.background = 'rgba(239, 68, 68, 0.06)';
+                    resultDiv.innerHTML = `
+                        <p style="font-size: 2.5rem; margin-bottom: 10px;">⚠️</p>
+                        <p style="color: var(--danger); font-size: 1.1rem; font-weight: 600; margin-bottom: 8px;">DOCUMENTO ALTERADO O FALSIFICADO</p>
+                        <p style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 4px;">El hash no coincide con ningún registro oficial del sistema.</p>
+                        <p style="color: var(--text-muted); font-size: 0.75rem; word-break: break-all; margin-top: 8px; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 6px; font-family: monospace;">SHA-256: ${data.hash_sha256}</p>
+                    `;
+                }
+            } catch (err) {
+                resultDiv.style.borderColor = 'var(--warning)';
+                resultDiv.style.background = 'rgba(245, 158, 11, 0.06)';
+                resultDiv.innerHTML = `
+                    <p style="font-size: 2rem; margin-bottom: 8px;">❌</p>
+                    <p style="color: var(--warning); font-size: 0.9rem;">Error de conexión: ${err.message}</p>
+                `;
+            }
+
+            // Resetear el input para permitir subir el mismo archivo de nuevo
+            e.target.value = '';
         }
 
         // --- ROUTER INTERNO DEL ADMIN (SIDEBAR) ---
