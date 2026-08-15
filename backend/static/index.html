@@ -1300,6 +1300,40 @@
             document.getElementById("login-password").value = "";
         }
 
+        let INACTIVITY_TIMEOUT = null;
+        const TIMEOUT_DURATION = 15 * 60 * 1000; // 15 minutos en milisegundos
+
+        function resetInactivityTimer() {
+            if (INACTIVITY_TIMEOUT) {
+                clearTimeout(INACTIVITY_TIMEOUT);
+            }
+            if (TOKEN) {
+                INACTIVITY_TIMEOUT = setTimeout(() => {
+                    alert("⚠️ Tu sesión ha expirado automáticamente tras 15 minutos de inactividad por razones de seguridad.");
+                    logout();
+                }, TIMEOUT_DURATION);
+            }
+        }
+
+        function setupInactivityListeners() {
+            window.addEventListener("mousemove", resetInactivityTimer);
+            window.addEventListener("keypress", resetInactivityTimer);
+            window.addEventListener("click", resetInactivityTimer);
+            window.addEventListener("scroll", resetInactivityTimer);
+            resetInactivityTimer();
+        }
+
+        function removeInactivityListeners() {
+            if (INACTIVITY_TIMEOUT) {
+                clearTimeout(INACTIVITY_TIMEOUT);
+                INACTIVITY_TIMEOUT = null;
+            }
+            window.removeEventListener("mousemove", resetInactivityTimer);
+            window.removeEventListener("keypress", resetInactivityTimer);
+            window.removeEventListener("click", resetInactivityTimer);
+            window.removeEventListener("scroll", resetInactivityTimer);
+        }
+
         function guardarSesion(data) {
             TOKEN = data.token;
             USERNAME = data.username;
@@ -1323,6 +1357,7 @@
                 NOMBRE = "";
                 ROL = "";
                 localStorage.clear();
+                removeInactivityListeners();
                 showView("view-login");
             });
         }
@@ -1344,7 +1379,9 @@
                 loadTecnicoDashboard();
             } else {
                 logout();
+                return;
             }
+            setupInactivityListeners();
         }
 
         // --- GESTIÓN DE MARCA (BRANDING) ---

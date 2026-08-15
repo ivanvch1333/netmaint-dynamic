@@ -244,7 +244,7 @@ def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
         db.add(models.SesionUsuario(
             token=token,
             usuario_id=user.id,
-            fecha_expiracion=datetime.utcnow() + timedelta(hours=24)
+            fecha_expiracion=datetime.utcnow() + timedelta(hours=8)
         ))
         db.commit()
 
@@ -310,7 +310,7 @@ def validar_2fa(payload: schemas.Validar2FARequest, db: Session = Depends(get_db
     db.add(models.SesionUsuario(
         token=token,
         usuario_id=user.id,
-        fecha_expiracion=datetime.utcnow() + timedelta(hours=24)
+        fecha_expiracion=datetime.utcnow() + timedelta(hours=8)
     ))
     db.add(models.LogAuditoria(
         usuario_id=str(user.id),
