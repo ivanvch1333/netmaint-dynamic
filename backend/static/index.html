@@ -40,28 +40,41 @@
             min-height: 100vh;
             overflow-x: hidden;
             background-image: 
-                radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.05) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(239, 68, 68, 0.03) 0%, transparent 40%);
+                radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 15% 75%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 50% 100%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+            background-attachment: fixed;
         }
 
         /* Utilidades de Transición y Animación */
         .fade-in {
-            animation: fadeIn 0.4s ease-out forwards;
+            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translateY(12px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+
+        .shake {
+            animation: shake 0.4s ease-in-out;
         }
 
         /* Glassmorphism General */
         .glass-card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: 16px;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(59, 130, 246, 0.05);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -75,7 +88,7 @@
             width: 100%;
             max-width: 1720px;
             margin: 0 auto;
-            padding: 20px 32px;
+            padding: 24px 32px;
         }
 
         #view-admin {
@@ -88,30 +101,107 @@
             display: block;
         }
 
-        /* --- VISTA: LOGIN --- */
+        /* --- VISTA: LOGIN CENTRADO Y RESPONSIVO --- */
+        .login-wrapper {
+            min-height: 88vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
         #view-login {
-            max-width: 440px;
-            margin-top: 10vh;
+            max-width: 460px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 40px 36px;
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 45px rgba(59, 130, 246, 0.12);
+        }
+
+        .login-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: var(--text-accent);
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 14px;
         }
 
         .login-header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 28px;
         }
 
         .login-header h1 {
             font-family: var(--font-display);
             font-weight: 800;
-            font-size: 2.2rem;
-            background: linear-gradient(135deg, #fff 0%, var(--primary) 100%);
+            font-size: 2.3rem;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffffff 30%, #93c5fd 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .login-header p {
             color: var(--text-muted);
-            font-size: 0.95rem;
+            font-size: 0.92rem;
+        }
+
+        /* Banner de Alerta Integrado de Ciberseguridad */
+        .auth-alert {
+            display: none;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 0.88rem;
+            line-height: 1.4;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .auth-alert.show {
+            display: flex;
+        }
+
+        .auth-alert-danger {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.45);
+            color: #fca5a5;
+        }
+
+        .auth-alert-warning {
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.45);
+            color: #fde68a;
+        }
+
+        .auth-alert-icon {
+            font-size: 1.15rem;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .auth-footer-tag {
+            text-align: center;
+            margin-top: 24px;
+            color: rgba(255, 255, 255, 0.35);
+            font-size: 0.78rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
 
         .form-group {
@@ -575,6 +665,38 @@
             object-fit: cover;
             border-radius: 6px;
         }
+
+        /* --- RESPONSIVE DESIGN AVANZADO --- */
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            .stats-row {
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            }
+            .grid-form-list {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .view {
+                padding: 16px 12px;
+            }
+            #view-login {
+                padding: 28px 20px;
+            }
+            .navbar {
+                padding: 12px 16px;
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+            .nav-user {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
     </style>
 </head>
 <body>
@@ -593,48 +715,63 @@
         </div>
     </nav>
 
-    <!-- VISTA 1: LOGIN -->
-    <div id="view-login" class="view glass-card active fade-in">
-        <div class="login-header">
-            <h1>NetMaint PRO</h1>
-            <p>Acceso al Sistema de Nodos</p>
-        </div>
-
-        <!-- PASO 1: Credenciales -->
-        <div id="login-step1">
-            <form id="login-form" onsubmit="handleLogin(event)">
-                <div class="form-group">
-                    <label>Usuario</label>
-                    <input type="text" id="login-username" class="form-control" placeholder="Escribe tu usuario" required>
+    <!-- VISTA 1: LOGIN (CENTRADO Y SEGURO) -->
+    <div class="login-wrapper">
+        <div id="view-login" class="view glass-card active fade-in">
+            <div class="login-header">
+                <div class="login-badge">
+                    <span>🛡️</span> Ciberseguridad Activa
                 </div>
-                <div class="form-group">
-                    <label>Contraseña</label>
-                    <input type="password" id="login-password" class="form-control" placeholder="Escribe tu clave" required>
-                </div>
-                <button type="submit" class="btn btn-block">Ingresar</button>
-            </form>
-        </div>
-
-        <!-- PASO 2: Doble Autenticación (2FA) -->
-        <div id="login-step2" style="display:none;">
-            <div style="text-align:center; margin-bottom:24px;">
-                <div style="font-size:3rem; margin-bottom:8px;">🔐</div>
-                <h3 style="font-family:var(--font-display); margin-bottom:6px;">Doble Autenticación</h3>
-                <p style="color:var(--text-muted); font-size:0.9rem;">Ingresa el código de 6 dígitos de tu app autenticadora (Google Authenticator, Authy).</p>
+                <h1>NetMaint PRO</h1>
+                <p>Mantenimiento Preventivo de Nodos</p>
             </div>
-            <form id="totp-form" onsubmit="handleTotp(event)">
-                <div class="form-group">
-                    <label>Código de Verificación (6 dígitos)</label>
-                    <input type="text" id="totp-code" class="form-control" placeholder="123456"
-                        maxlength="6" pattern="[0-9]{6}" inputmode="numeric"
-                        style="font-size:2rem; text-align:center; letter-spacing:12px; font-family:monospace;" required>
+
+            <!-- Banner de Alerta Integrado (Sin popups nativos) -->
+            <div id="login-alert" class="auth-alert auth-alert-danger">
+                <span class="auth-alert-icon" id="login-alert-icon">🛡️</span>
+                <div id="login-alert-text" style="font-weight: 500;"></div>
+            </div>
+
+            <!-- PASO 1: Credenciales -->
+            <div id="login-step1">
+                <form id="login-form" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label>Usuario</label>
+                        <input type="text" id="login-username" class="form-control" placeholder="Escribe tu usuario" oninput="hideLoginAlert()" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Contraseña</label>
+                        <input type="password" id="login-password" class="form-control" placeholder="Escribe tu clave" oninput="hideLoginAlert()" required>
+                    </div>
+                    <button type="submit" id="btn-login-submit" class="btn btn-block" style="padding: 14px; font-weight: 600; font-size: 1rem; margin-top: 8px;">Ingresar</button>
+                </form>
+            </div>
+
+            <!-- PASO 2: Doble Autenticación (2FA) -->
+            <div id="login-step2" style="display:none;">
+                <div style="text-align:center; margin-bottom:20px;">
+                    <div style="font-size:2.6rem; margin-bottom:6px;">🔐</div>
+                    <h3 style="font-family:var(--font-display); margin-bottom:4px; font-size: 1.3rem;">Doble Autenticación</h3>
+                    <p style="color:var(--text-muted); font-size:0.88rem;">Ingresa el código de 6 dígitos de tu app autenticadora.</p>
                 </div>
-                <div style="text-align:center; margin-bottom:16px; font-size:0.8rem; color:var(--text-muted);">
-                    ⏱️ El código cambia cada 30 segundos
-                </div>
-                <button type="submit" class="btn btn-block btn-success">Verificar Código</button>
-                <button type="button" class="btn btn-block btn-muted" onclick="cancelar2FA()" style="margin-top:8px;">← Volver al login</button>
-            </form>
+                <form id="totp-form" onsubmit="handleTotp(event)">
+                    <div class="form-group">
+                        <label style="text-align: center;">Código de Verificación</label>
+                        <input type="text" id="totp-code" class="form-control" placeholder="000000"
+                            maxlength="6" pattern="[0-9]{6}" inputmode="numeric" oninput="hideLoginAlert()"
+                            style="font-size:2rem; text-align:center; letter-spacing:10px; font-family:monospace; padding: 10px;" required>
+                    </div>
+                    <div style="text-align:center; margin-bottom:16px; font-size:0.8rem; color:var(--text-muted);">
+                        ⏱️ El código cambia cada 30 segundos
+                    </div>
+                    <button type="submit" class="btn btn-block btn-success" style="padding: 12px; font-weight: 600;">Verificar Código</button>
+                    <button type="button" class="btn btn-block btn-muted" onclick="cancelar2FA()" style="margin-top:8px; padding: 10px;">← Volver al login</button>
+                </form>
+            </div>
+
+            <div class="auth-footer-tag">
+                <span>🔒</span> Conexión Segura — PBKDF2 / SHA-256 / 2FA
+            </div>
         </div>
     </div>
 
@@ -1233,11 +1370,46 @@
             }
         }
 
-        // Login Handler — soporta flujo 2FA de dos pasos
+        function showLoginAlert(message, type = "danger") {
+            const alertBox = document.getElementById("login-alert");
+            const alertText = document.getElementById("login-alert-text");
+            const alertIcon = document.getElementById("login-alert-icon");
+            const loginCard = document.getElementById("view-login");
+
+            if (alertBox && alertText && alertIcon) {
+                alertBox.className = `auth-alert auth-alert-${type} show`;
+                alertText.innerHTML = message;
+                alertIcon.innerText = type === "danger" ? "🛡️" : "⚠️";
+
+                // Animación de vibración sutil
+                if (loginCard) {
+                    loginCard.classList.remove("shake");
+                    void loginCard.offsetWidth;
+                    loginCard.classList.add("shake");
+                }
+            }
+        }
+
+        function hideLoginAlert() {
+            const alertBox = document.getElementById("login-alert");
+            if (alertBox) {
+                alertBox.classList.remove("show");
+            }
+        }
+
+        // Login Handler — soporta flujo 2FA de dos pasos y alerta integrada
         async function handleLogin(e) {
             e.preventDefault();
+            hideLoginAlert();
             const username = document.getElementById("login-username").value.trim();
             const password = document.getElementById("login-password").value;
+            const btn = document.getElementById("btn-login-submit");
+            
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = "Verificando...";
+            }
+
             try {
                 const response = await fetch(API_URL + "/auth/login", {
                     method: "POST",
@@ -1264,13 +1436,19 @@
                 guardarSesion(data);
                 initSession();
             } catch (err) {
-                alert(err.message);
+                showLoginAlert(err.message, "danger");
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = "Ingresar";
+                }
             }
         }
 
         // Handler del segundo paso: validar código TOTP
         async function handleTotp(e) {
             e.preventDefault();
+            hideLoginAlert();
             const codigo_totp = document.getElementById("totp-code").value.trim();
             try {
                 const response = await fetch(API_URL + "/auth/2fa/validar", {
@@ -1287,7 +1465,7 @@
                 cancelar2FA();
                 initSession();
             } catch (err) {
-                alert(err.message);
+                showLoginAlert(err.message, "danger");
                 document.getElementById("totp-code").value = "";
                 document.getElementById("totp-code").focus();
             }
@@ -1295,6 +1473,7 @@
 
         function cancelar2FA() {
             SESSION_2FA_TOKEN = "";
+            hideLoginAlert();
             document.getElementById("login-step1").style.display = "block";
             document.getElementById("login-step2").style.display = "none";
             document.getElementById("login-password").value = "";
