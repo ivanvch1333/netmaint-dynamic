@@ -102,19 +102,10 @@
         }
 
         /* --- VISTA: LOGIN CENTRADO Y RESPONSIVO --- */
-        .login-wrapper {
-            min-height: 88vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
         #view-login {
             max-width: 460px;
             width: 100%;
-            margin: 0 auto;
+            margin: 8vh auto 40px auto;
             padding: 40px 36px;
             border: 1px solid rgba(59, 130, 246, 0.25);
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 45px rgba(59, 130, 246, 0.12);
@@ -716,62 +707,60 @@
     </nav>
 
     <!-- VISTA 1: LOGIN (CENTRADO Y SEGURO) -->
-    <div class="login-wrapper">
-        <div id="view-login" class="view glass-card active fade-in">
-            <div class="login-header">
-                <div class="login-badge">
-                    <span>🛡️</span> Ciberseguridad Activa
+    <div id="view-login" class="view glass-card active fade-in">
+        <div class="login-header">
+            <div class="login-badge">
+                <span>🛡️</span> Ciberseguridad Activa
+            </div>
+            <h1>NetMaint PRO</h1>
+            <p>Mantenimiento Preventivo de Nodos</p>
+        </div>
+
+        <!-- Banner de Alerta Integrado (Sin popups nativos) -->
+        <div id="login-alert" class="auth-alert auth-alert-danger">
+            <span class="auth-alert-icon" id="login-alert-icon">🛡️</span>
+            <div id="login-alert-text" style="font-weight: 500;"></div>
+        </div>
+
+        <!-- PASO 1: Credenciales -->
+        <div id="login-step1">
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Usuario</label>
+                    <input type="text" id="login-username" class="form-control" placeholder="Escribe tu usuario" oninput="hideLoginAlert()" required>
                 </div>
-                <h1>NetMaint PRO</h1>
-                <p>Mantenimiento Preventivo de Nodos</p>
-            </div>
-
-            <!-- Banner de Alerta Integrado (Sin popups nativos) -->
-            <div id="login-alert" class="auth-alert auth-alert-danger">
-                <span class="auth-alert-icon" id="login-alert-icon">🛡️</span>
-                <div id="login-alert-text" style="font-weight: 500;"></div>
-            </div>
-
-            <!-- PASO 1: Credenciales -->
-            <div id="login-step1">
-                <form id="login-form" onsubmit="handleLogin(event)">
-                    <div class="form-group">
-                        <label>Usuario</label>
-                        <input type="text" id="login-username" class="form-control" placeholder="Escribe tu usuario" oninput="hideLoginAlert()" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Contraseña</label>
-                        <input type="password" id="login-password" class="form-control" placeholder="Escribe tu clave" oninput="hideLoginAlert()" required>
-                    </div>
-                    <button type="submit" id="btn-login-submit" class="btn btn-block" style="padding: 14px; font-weight: 600; font-size: 1rem; margin-top: 8px;">Ingresar</button>
-                </form>
-            </div>
-
-            <!-- PASO 2: Doble Autenticación (2FA) -->
-            <div id="login-step2" style="display:none;">
-                <div style="text-align:center; margin-bottom:20px;">
-                    <div style="font-size:2.6rem; margin-bottom:6px;">🔐</div>
-                    <h3 style="font-family:var(--font-display); margin-bottom:4px; font-size: 1.3rem;">Doble Autenticación</h3>
-                    <p style="color:var(--text-muted); font-size:0.88rem;">Ingresa el código de 6 dígitos de tu app autenticadora.</p>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="login-password" class="form-control" placeholder="Escribe tu clave" oninput="hideLoginAlert()" required>
                 </div>
-                <form id="totp-form" onsubmit="handleTotp(event)">
-                    <div class="form-group">
-                        <label style="text-align: center;">Código de Verificación</label>
-                        <input type="text" id="totp-code" class="form-control" placeholder="000000"
-                            maxlength="6" pattern="[0-9]{6}" inputmode="numeric" oninput="hideLoginAlert()"
-                            style="font-size:2rem; text-align:center; letter-spacing:10px; font-family:monospace; padding: 10px;" required>
-                    </div>
-                    <div style="text-align:center; margin-bottom:16px; font-size:0.8rem; color:var(--text-muted);">
-                        ⏱️ El código cambia cada 30 segundos
-                    </div>
-                    <button type="submit" class="btn btn-block btn-success" style="padding: 12px; font-weight: 600;">Verificar Código</button>
-                    <button type="button" class="btn btn-block btn-muted" onclick="cancelar2FA()" style="margin-top:8px; padding: 10px;">← Volver al login</button>
-                </form>
-            </div>
+                <button type="submit" id="btn-login-submit" class="btn btn-block" style="padding: 14px; font-weight: 600; font-size: 1rem; margin-top: 8px;">Ingresar</button>
+            </form>
+        </div>
 
-            <div class="auth-footer-tag">
-                <span>🔒</span> Conexión Segura — PBKDF2 / SHA-256 / 2FA
+        <!-- PASO 2: Doble Autenticación (2FA) -->
+        <div id="login-step2" style="display:none;">
+            <div style="text-align:center; margin-bottom:20px;">
+                <div style="font-size:2.6rem; margin-bottom:6px;">🔐</div>
+                <h3 style="font-family:var(--font-display); margin-bottom:4px; font-size: 1.3rem;">Doble Autenticación</h3>
+                <p style="color:var(--text-muted); font-size:0.88rem;">Ingresa el código de 6 dígitos de tu app autenticadora.</p>
             </div>
+            <form id="totp-form" onsubmit="handleTotp(event)">
+                <div class="form-group">
+                    <label style="text-align: center;">Código de Verificación</label>
+                    <input type="text" id="totp-code" class="form-control" placeholder="000000"
+                        maxlength="6" pattern="[0-9]{6}" inputmode="numeric" oninput="hideLoginAlert()"
+                        style="font-size:2rem; text-align:center; letter-spacing:10px; font-family:monospace; padding: 10px;" required>
+                </div>
+                <div style="text-align:center; margin-bottom:16px; font-size:0.8rem; color:var(--text-muted);">
+                    ⏱️ El código cambia cada 30 segundos
+                </div>
+                <button type="submit" class="btn btn-block btn-success" style="padding: 12px; font-weight: 600;">Verificar Código</button>
+                <button type="button" class="btn btn-block btn-muted" onclick="cancelar2FA()" style="margin-top:8px; padding: 10px;">← Volver al login</button>
+            </form>
+        </div>
+
+        <div class="auth-footer-tag">
+            <span>🔒</span> Conexión Segura — PBKDF2 / SHA-256 / 2FA
         </div>
     </div>
 
