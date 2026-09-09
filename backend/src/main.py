@@ -154,11 +154,20 @@ def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
         if user:
             # 1. Verificar si la cuenta está bloqueada temporalmente por seguridad
             if user.bloqueado_hasta and user.bloqueado_hasta > datetime.utcnow():
-                segundos_restantes = int((user.bloqueado_hasta - datetime.utcnow()).total_seconds())
-                minutos_restantes = max(1, segundos_restantes // 60)
+                segundos_totales = max(1, int((user.bloqueado_hasta - datetime.utcnow()).total_seconds()))
+                mins = segundos_totales // 60
+                segs = segundos_totales % 60
+                
+                if mins > 0 and segs > 0:
+                    tiempo_str = f"{mins} min {segs} seg"
+                elif mins > 0:
+                    tiempo_str = f"{mins} min"
+                else:
+                    tiempo_str = f"{segs} seg"
+
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Cuenta bloqueada temporalmente por seguridad. Intente nuevamente en {} minuto(s).".format(minutos_restantes)
+                    detail=f"Cuenta congelada por intentos fallidos. Intente nuevamente en {tiempo_str}."
                 )
 
         if not user or not verify_password(credentials.password, user.password_hash):
@@ -192,9 +201,19 @@ def login(credentials: schemas.LoginRequest, db: Session = Depends(get_db)):
                 db.commit()
 
                 if minutos_bloqueo > 0:
+                    segundos_totales = int((user.bloqueado_hasta - datetime.utcnow()).total_seconds())
+                    mins = segundos_totales // 60
+                    segs = segundos_totales % 60
+                    if mins > 0 and segs > 0:
+                        tiempo_str = f"{mins} min {segs} seg"
+                    elif mins > 0:
+                        tiempo_str = f"{mins} min"
+                    else:
+                        tiempo_str = f"{segs} seg"
+
                     raise HTTPException(
                         status_code=status.HTTP_403_FORBIDDEN,
-                        detail="Cuenta suspendida temporalmente por {} minutos debido a {} intentos fallidos consecutivos.".format(minutos_bloqueo, user.intentos_fallidos)
+                        detail=f"Cuenta congelada por intentos fallidos. Intente nuevamente en {tiempo_str}."
                     )
             else:
                 db.add(models.LogAuditoria(

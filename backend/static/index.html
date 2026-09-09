@@ -1368,7 +1368,14 @@
             if (alertBox && alertText && alertIcon) {
                 alertBox.className = `auth-alert auth-alert-${type} show`;
                 alertText.innerHTML = message;
-                alertIcon.innerText = type === "danger" ? "🛡️" : "⚠️";
+                
+                if (message.includes("congelada") || message.includes("bloqueada") || message.includes("fallidos")) {
+                    alertIcon.innerText = "🚨";
+                } else if (type === "warning") {
+                    alertIcon.innerText = "⚠️";
+                } else {
+                    alertIcon.innerText = "🛡️";
+                }
 
                 // Animación de vibración sutil
                 if (loginCard) {
